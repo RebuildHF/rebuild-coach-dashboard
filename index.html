@@ -329,39 +329,39 @@ const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const PHASES = [
   { id:1, title:"Orientation & Self-Assessment", weeks:"Weeks 1–2", unlockDay:0,
     sessions:[
-      { id:"1a", title:"Introduction & Shadowing" },
-      { id:"1b", title:"Heatmap Self-Assessment" },
-      { id:"1c", title:"Goal Setting & IDP" },
+      { id:"1a", title:"Introduction & Shadowing", video:"https://youtu.be/fAwf9NZoOOg" },
+      { id:"1b", title:"Heatmap Self-Assessment", video:"https://youtu.be/wA9c5JySu7E" },
+      { id:"1c", title:"Goal Setting & IDP", video:"https://youtu.be/get38DBriJY" },
     ]},
   { id:2, title:"Knowledge & Physical Capabilities", weeks:"Weeks 3–4", unlockDay:14,
     sessions:[
-      { id:"2a", title:"Learning, Knowledge & Experience" },
-      { id:"2b", title:"Personal Physical Capabilities" },
-      { id:"2c", title:"Business Integration" },
+      { id:"2a", title:"Learning, Knowledge & Experience", video:"https://youtu.be/cASwKz2wJIk" },
+      { id:"2b", title:"Personal Physical Capabilities", video:"https://youtu.be/jM6f4sI_CIw" },
+      { id:"2c", title:"Business Integration", video:"https://youtu.be/lQK4zhaPxOM" },
     ]},
   { id:3, title:"Coaching, Communication & Leadership", weeks:"Weeks 5–6", unlockDay:28,
     sessions:[
-      { id:"3a", title:"Coaching Practice & Feedback" },
-      { id:"3b", title:"Leadership & Communication Skills" },
-      { id:"3c", title:"Gym Operations" },
+      { id:"3a", title:"Coaching Practice & Feedback", video:"https://youtu.be/CrQuoOb_WJU" },
+      { id:"3b", title:"Leadership & Communication Skills", video:"https://youtu.be/sVxgTsRt8mc" },
+      { id:"3c", title:"Gym Operations", video:"https://youtu.be/dkIJ7A3MQJE" },
     ]},
   { id:4, title:"Injury & Pain Triage", weeks:"Weeks 7–8", unlockDay:42,
     sessions:[
-      { id:"4a", title:"Practical Observations" },
-      { id:"4b", title:"Referral Network & Collaboration" },
-      { id:"4c", title:"Business Risk Management" },
+      { id:"4a", title:"Practical Observations", video:"" },
+      { id:"4b", title:"Referral Network & Collaboration", video:"" },
+      { id:"4c", title:"Business Risk Management", video:"" },
     ]},
   { id:5, title:"World-Best-Standard Practices", weeks:"Weeks 9–10", unlockDay:56,
     sessions:[
-      { id:"5a", title:"Advanced Coaching Standards" },
-      { id:"5b", title:"Programming & Periodisation" },
-      { id:"5c", title:"Member Development" },
+      { id:"5a", title:"Advanced Coaching Standards", video:"" },
+      { id:"5b", title:"Programming & Periodisation", video:"" },
+      { id:"5c", title:"Member Development", video:"" },
     ]},
   { id:6, title:"Evaluation & Graduation", weeks:"Weeks 11–12", unlockDay:70,
     sessions:[
-      { id:"6a", title:"Heatmap Re-Assessment" },
-      { id:"6b", title:"Portfolio Review" },
-      { id:"6c", title:"Graduation & Next Steps" },
+      { id:"6a", title:"Heatmap Re-Assessment", video:"" },
+      { id:"6b", title:"Portfolio Review", video:"" },
+      { id:"6c", title:"Graduation & Next Steps", video:"" },
     ]},
 ];
 
@@ -573,7 +573,7 @@ async function renderMyProgram(container, coachId) {
         <ul class="sub-list">`;
 
     for (const session of phase.sessions) {
-      const hasVideo = sessionData[`${session.id}_video`];
+      const hasVideo = sessionData[`${session.id}_video`] || session.video;
       if (isUnlocked) {
         html += `<li class="sub-item sub-unlocked" onclick="openSession('${session.id}','${session.title}','${coachId}')">
           <div class="sub-icon">▶</div>
@@ -615,7 +615,10 @@ async function openSession(sessionId, sessionTitle, coachId, isMentorView) {
   const coachData = await getCoachData(coachId);
   const sessionData = coachData.data || {};
 
-  const videoUrl = sessionData[`${sessionId}_video`] || "";
+  // Use hardcoded video from PHASES as default, allow mentor override
+  const phaseSession = PHASES.flatMap(p=>p.sessions).find(s=>s.id===sessionId);
+  const defaultVideo = phaseSession?.video || "";
+  const videoUrl = sessionData[`${sessionId}_video`] || defaultVideo;
   const docs = sessionData[`${sessionId}_docs`] || [];
   const notes = sessionData[`${sessionId}_notes`] || "";
   const canEdit = currentUser.role === "mentor" || currentUser.role === "admin";
@@ -956,7 +959,7 @@ async function openCoachView(coachId, coachName) {
         <ul class="sub-list">`;
 
     for (const session of phase.sessions) {
-      const hasVideo = sessionData[`${session.id}_video`];
+      const hasVideo = sessionData[`${session.id}_video`] || session.video;
       if (isUnlocked) {
         html += `<li class="sub-item sub-unlocked" onclick="openSession('${session.id}','${session.title}','${coachId}',true)">
           <div class="sub-icon">✏️</div>
@@ -1135,6 +1138,13 @@ async function deleteUser(userId, name) {
 // ═══════════════════════════════════════════════════════════════════════
 function driveEmbedUrl(url) {
   if (!url) return "";
+  // YouTube youtu.be short link
+  const ytShort = url.match(/youtu\.be\/([A-Za-z0-9_-]+)/);
+  if (ytShort) return `https://www.youtube.com/embed/${ytShort[1]}`;
+  // YouTube full link
+  const ytFull = url.match(/youtube\.com\/watch\?v=([A-Za-z0-9_-]+)/);
+  if (ytFull) return `https://www.youtube.com/embed/${ytFull[1]}`;
+  // Google Drive file
   const fileMatch = url.match(/\/file\/d\/([^/]+)/);
   if (fileMatch) return `https://drive.google.com/file/d/${fileMatch[1]}/preview`;
   if (url.includes("/preview") || url.includes("embed")) return url;
