@@ -1291,8 +1291,89 @@ async function renderHeatmap(container, coachId) {
     }
 
     if (canEdit) {
-      html += `<div style="display:flex;gap:10px;margin-bottom:24px">
+      const savedAt = responses._savedAt ? `Last saved: ${new Date(responses._savedAt).toLocaleString("en-AU",{dateStyle:"medium",timeStyle:"short"})}` : "";
+      html += `<div style="display:flex;align-items:center;gap:16px;margin-bottom:12px;flex-wrap:wrap">
         <button class="btn btn-primary" onclick="saveHeatmap('${prefix}','${coachId}','${week}')">Save Progress</button>
+        <span id="${prefix}-saved-label" style="font-size:13px;color:var(--muted)">${savedAt}</span>
+      </div>`;
+    }
+
+    // Summary section (shown if there are responses)
+    if (overallNums.length > 0) {
+      // Build per-domain data for summary
+      const domainSummaryData = HEATMAP_DOMAINS.map(domain => {
+        const nums = domain.statements.map((_,si) => {
+          const v = responses[`${domain.id}_${si+1}`];
+          return v ? parseInt(v) : null;
+        }).filter(v => v !== null);
+        const avg = nums.length ? nums.reduce((a,b)=>a+b,0)/nums.length : null;
+        const lowStatements = domain.statements
+          .map((stmt, si) => ({ stmt, score: parseInt(responses[`${domain.id}_${si+1}`]||0) }))
+          .filter(x => x.score > 0 && x.score <= 2)
+          .sort((a,b)=>a.score-b.score);
+        const highStatements = domain.statements
+          .map((stmt, si) => ({ stmt, score: parseInt(responses[`${domain.id}_${si+1}`]||0) }))
+          .filter(x => x.score >= 4)
+          .sort((a,b)=>b.score-a.score);
+        return { ...domain, avg, lowStatements, highStatements, answeredCount: nums.length };
+      });
+
+      const topDomains = [...domainSummaryData].filter(d=>d.avg!==null).sort((a,b)=>b.avg-a.avg).slice(0,2);
+      const gapDomains = [...domainSummaryData].filter(d=>d.avg!==null).sort((a,b)=>a.avg-b.avg).slice(0,2);
+      const allLow = domainSummaryData.flatMap(d => d.lowStatements.map(s=>({...s, domain:d.title}))).sort((a,b)=>a.score-b.score).slice(0,5);
+
+      html += `<div id="${prefix}-summary" style="margin-top:8px;margin-bottom:24px;border:1.5px solid var(--border);border-radius:12px;overflow:hidden">
+        <div style="background:var(--dark);padding:14px 18px;display:flex;align-items:center;justify-content:space-between">
+          <span style="color:white;font-weight:700;font-size:15px">📊 Heatmap Summary & IDP Insights</span>
+          <span style="color:#9CA3AF;font-size:12px">${overallNums.length} of 32 statements rated</span>
+        </div>
+
+        <div style="padding:16px 18px;border-bottom:1px solid var(--border);background:white">
+          <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:10px">Domain Snapshot</div>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">
+            ${domainSummaryData.filter(d=>d.avg!==null).map(d=>`
+              <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--offwhite);border-radius:8px">
+                <span style="width:10px;height:10px;border-radius:3px;background:${heatmapScoreColor(d.avg)};flex-shrink:0"></span>
+                <span style="font-size:12px;color:var(--dark);line-height:1.3">${d.title}</span>
+                <span style="margin-left:auto;font-weight:700;font-size:13px;color:${heatmapScoreColor(d.avg)}">${d.avg.toFixed(1)}</span>
+              </div>`).join("")}
+          </div>
+        </div>
+
+        ${topDomains.length ? `<div style="padding:16px 18px;border-bottom:1px solid var(--border);background:white">
+          <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#10B981;margin-bottom:10px">✅ Strengths to Leverage</div>
+          ${topDomains.map(d=>`<div style="margin-bottom:8px">
+            <div style="font-size:13px;font-weight:600;color:var(--dark)">${d.title} <span style="font-weight:400;color:var(--muted)">(avg ${d.avg.toFixed(1)})</span></div>
+            ${d.highStatements.slice(0,2).map(s=>`<div style="font-size:12px;color:var(--muted);margin-top:3px;padding-left:10px;border-left:2px solid #10B981">↑ ${s.stmt}</div>`).join("")}
+          </div>`).join("")}
+        </div>` : ""}
+
+        ${gapDomains.length ? `<div style="padding:16px 18px;border-bottom:1px solid var(--border);background:white">
+          <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#EF4444;margin-bottom:10px">🎯 Priority Development Areas</div>
+          ${gapDomains.map(d=>`<div style="margin-bottom:8px">
+            <div style="font-size:13px;font-weight:600;color:var(--dark)">${d.title} <span style="font-weight:400;color:var(--muted)">(avg ${d.avg.toFixed(1)})</span></div>
+            ${d.lowStatements.slice(0,2).map(s=>`<div style="font-size:12px;color:var(--muted);margin-top:3px;padding-left:10px;border-left:2px solid #EF4444">↓ ${s.stmt}</div>`).join("")}
+          </div>`).join("")}
+        </div>` : ""}
+
+        ${allLow.length ? `<div style="padding:16px 18px;border-bottom:1px solid var(--border);background:white">
+          <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#F59E0B;margin-bottom:10px">💡 Suggested IDP Focus Areas</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Statements rated Disagree or Strongly Disagree — ideal starting points for goal setting:</div>
+          ${allLow.map(s=>`<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;padding:8px 10px;background:#FEF3C7;border-radius:8px;border-left:3px solid #F59E0B">
+            <span style="font-size:10px;font-weight:700;padding:2px 5px;background:#F59E0B;color:white;border-radius:4px;flex-shrink:0;margin-top:1px">${HEATMAP_LABELS[s.score-1]}</span>
+            <div>
+              <div style="font-size:12px;color:var(--dark);line-height:1.4">${s.stmt}</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">${s.domain}</div>
+            </div>
+          </div>`).join("")}
+        </div>` : ""}
+
+        <div style="padding:14px 18px;background:#F0FDF4">
+          <div style="font-size:12px;color:#166534;line-height:1.5">
+            <strong>Next step:</strong> Use the Priority Development Areas and IDP Focus Areas above to set 1–3 SMART goals for the next training cycle.
+            Discuss with your mentor at your next check-in and update this heatmap at Week 11 to track growth.
+          </div>
+        </div>
       </div>`;
     }
 
@@ -1363,9 +1444,13 @@ async function saveHeatmap(prefix, coachId, week) {
       radios.forEach(r => { if (r.checked) responses[key] = r.value; });
     });
   }
+  responses._savedAt = new Date().toISOString();
   try {
     await upsertCoachData(coachId, {}, { [`heatmap_w${week}`]: responses });
     showToast("Heatmap saved ✓");
+    // Update "last saved" label without full re-render
+    const label = document.getElementById(`${prefix}-saved-label`);
+    if (label) label.textContent = `Last saved: ${new Date(responses._savedAt).toLocaleString("en-AU",{dateStyle:"medium",timeStyle:"short"})}`;
   } catch(e) {
     showToast("Error saving: " + e.message);
   }
