@@ -769,9 +769,10 @@ async function renderMyProgram(container, coachId) {
   const sessionData = coachData.data || {};
   const globalSessionData = globalData.data || {};
 
-  // In preview mode, treat as enrolled 999 days ago so all phases are unlocked
+  // Admins/mentors and preview mode always see all phases unlocked
   const isPreview = currentUser._preview === true;
-  const enrolledDate = isPreview
+  const isElevated = currentUser.role === "admin" || currentUser.role === "mentor" || isPreview;
+  const enrolledDate = isElevated
     ? new Date(Date.now() - 999 * 86400000)
     : (coachData.enrolled_date ? new Date(coachData.enrolled_date) : null);
   const today = new Date();
