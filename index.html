@@ -759,7 +759,11 @@ async function renderMyProgram(container, coachId) {
   const coachData = await getCoachData(coachId);
   const sessionData = coachData.data || {};
 
-  const enrolledDate = coachData.enrolled_date ? new Date(coachData.enrolled_date) : null;
+  // In preview mode, treat as enrolled 999 days ago so all phases are unlocked
+  const isPreview = currentUser._preview === true;
+  const enrolledDate = isPreview
+    ? new Date(Date.now() - 999 * 86400000)
+    : (coachData.enrolled_date ? new Date(coachData.enrolled_date) : null);
   const today = new Date();
 
   let html = `<div style="margin-bottom:20px">
