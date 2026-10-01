@@ -678,6 +678,15 @@ async function getCoachData(coachId) {
   return data || {};
 }
 
+// Global (shared across all coaches) — notes, docs, video overrides live here
+async function getGlobalData() {
+  return getCoachData("_global");
+}
+
+async function upsertGlobalData(dataPatch = {}) {
+  return upsertCoachData("_global", {}, dataPatch);
+}
+
 async function upsertCoachData(coachId, topLevel = {}, dataPatch = {}) {
   const { data: existing } = await sb
     .from("coach_data")
@@ -756,8 +765,9 @@ async function sendReflectionEmail(coachName, sessionId, sessionTitle, phaseName
 // COACH: MY PROGRAM
 // ═══════════════════════════════════════════════════════════════════════
 async function renderMyProgram(container, coachId) {
-  const coachData = await getCoachData(coachId);
+  const [coachData, globalData] = await Promise.all([getCoachData(coachId), getGlobalData()]);
   const sessionData = coachData.data || {};
+  const globalSessionData = globalData.data || {};
 
   // In preview mode, treat as enrolled 999 days ago so all phases are unlocked
   const isPreview = currentUser._preview === true;
@@ -795,7 +805,7 @@ async function renderMyProgram(container, coachId) {
         <ul class="sub-list">`;
 
     for (const session of phase.sessions) {
-      const hasVideo = sessionData[`${session.id}_video`] || session.video;
+      const hasVideo = globalSessionData[`${session.id}_video`] || session.video;
       const isSubmitted = sessionData[`${session.id}_submitted`] === true;
       if (isUnlocked) {
         let statusPill = "";
@@ -847,13 +857,14 @@ async function openSession(sessionId, sessionTitle, coachId, isMentorView) {
 
   _modalContext = { sessionId, coachId };
 
-  const coachData = await getCoachData(coachId);
+  const [coachData, globalData] = await Promise.all([getCoachData(coachId), getGlobalData()]);
   const sessionData = coachData.data || {};
+  const globalSessionData = globalData.data || {};
 
   const defaultVideo = phaseSession?.video || "";
-  const videoUrl = sessionData[`${sessionId}_video`] || defaultVideo;
-  const docs = sessionData[`${sessionId}_docs`] || [];
-  const notes = sessionData[`${sessionId}_notes`] || "";
+  const videoUrl = globalSessionData[`${sessionId}_video`] || defaultVideo;
+  const docs = globalSessionData[`${sessionId}_docs`] || [];
+  const notes = globalSessionData[`${sessionId}_notes`] || "";
   const canEdit = currentUser.role === "mentor" || currentUser.role === "admin";
   const isCoach = currentUser.role === "coach";
   const isSubmitted = sessionData[`${sessionId}_submitted`] === true;
@@ -1116,7 +1127,7 @@ async function saveSession(sessionId, coachId) {
   });
 
   try {
-    await upsertCoachData(coachId, {}, {
+    await upsertGlobalData({
       [`${sessionId}_video`]: videoUrl,
       [`${sessionId}_docs`]: docs,
       [`${sessionId}_notes`]: notes,
@@ -1266,8 +1277,9 @@ async function openCoachView(coachId, coachName) {
   const main = document.getElementById("main-content");
   main.innerHTML = `<div class="loading"><div class="spinner"></div> Loading&hellip;</div>`;
 
-  const coachData = await getCoachData(coachId);
+  const [coachData, globalData] = await Promise.all([getCoachData(coachId), getGlobalData()]);
   const sessionData = coachData.data || {};
+  const globalSessionData = globalData.data || {};
 
   const enrolledDate = coachData.enrolled_date ? new Date(coachData.enrolled_date) : null;
   const today = new Date();
@@ -1351,7 +1363,7 @@ async function openCoachView(coachId, coachName) {
         <ul class="sub-list">`;
 
     for (const session of phase.sessions) {
-      const hasVideo = sessionData[`${session.id}_video`] || session.video;
+      const hasVideo = globalSessionData[`${session.id}_video`] || session.video;
       const isSubmitted = sessionData[`${session.id}_submitted`] === true;
       const hasResponse = !!sessionData[`${session.id}_mentor_response`];
       if (isUnlocked) {
