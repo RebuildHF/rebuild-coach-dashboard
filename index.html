@@ -893,6 +893,15 @@ async function openSession(sessionId, sessionTitle, coachId, isMentorView) {
   }
   html += `</div>`;
 
+  // ── Heatmap embed (session 1b only) ──
+  if (sessionId === "1b") {
+    html += `<div class="modal-section">
+      <div class="modal-section-title">Coaching Competency Heatmap</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Complete your self-assessment below — rate each competency statement, then save to generate your personalised IDP summary.</p>
+      <div id="modal-heatmap-container"></div>
+    </div>`;
+  }
+
   // ── Documents ──
   if (docs.length > 0) {
     html += `<div class="modal-section">
@@ -1017,6 +1026,12 @@ async function openSession(sessionId, sessionTitle, coachId, isMentorView) {
 
   body.innerHTML = html;
   _docCount = docs.length;
+
+  // Render heatmap inline if this is session 1b
+  if (sessionId === "1b") {
+    const hmContainer = document.getElementById("modal-heatmap-container");
+    if (hmContainer) renderHeatmap(hmContainer, coachId);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════
