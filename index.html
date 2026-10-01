@@ -1622,17 +1622,65 @@ async function openCoachView(coachId, coachName) {
         <button class="btn btn-primary btn-sm" onclick="saveCoachSettings('${coachId}')">Save Settings</button>
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div class="mentor-field">
-        <label>Heatmap Week 2 (Google Drive link)</label>
-        <input type="url" id="coach-hm2" value="${escHtml(coachData.heatmap_week2||"")}" placeholder="https://drive.google.com/...">
+  </div>
+
+  // ── Heatmap summary card ──
+  function hmDomainSummary(responses) {
+    if (!responses || Object.keys(responses).filter(k=>k!=='_savedAt').length === 0) return null;
+    return HEATMAP_DOMAINS.map(domain => {
+      const nums = domain.statements.map((_,si) => {
+        const v = responses[`${domain.id}_${si+1}`];
+        return v ? parseInt(v) : null;
+      }).filter(v => v !== null);
+      const avg = nums.length ? nums.reduce((a,b)=>a+b,0)/nums.length : null;
+      return { title: domain.title, avg, answered: nums.length };
+    });
+  }
+
+  const hmW2 = sessionData.heatmap_w2 || {};
+  const hmW11 = sessionData.heatmap_w11 || {};
+  const w2domains = hmDomainSummary(hmW2);
+  const w11domains = hmDomainSummary(hmW11);
+  const w2savedAt = hmW2._savedAt ? new Date(hmW2._savedAt).toLocaleString("en-AU",{dateStyle:"medium",timeStyle:"short"}) : null;
+  const w11savedAt = hmW11._savedAt ? new Date(hmW11._savedAt).toLocaleString("en-AU",{dateStyle:"medium",timeStyle:"short"}) : null;
+
+  function renderHmSummaryCard(domains, savedAt, label) {
+    if (!domains) return `<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px;font-style:italic">Not yet completed</div>`;
+    const overallNums = domains.filter(d=>d.avg!==null).map(d=>d.avg);
+    const overall = overallNums.length ? (overallNums.reduce((a,b)=>a+b,0)/overallNums.length).toFixed(2) : null;
+    return `
+      ${savedAt ? `<div style="font-size:11px;color:var(--muted);margin-bottom:10px">Last saved: ${savedAt}</div>` : ""}
+      ${overall ? `<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:10px 12px;background:${heatmapScoreColor(parseFloat(overall))}18;border-radius:8px;border:1.5px solid ${heatmapScoreColor(parseFloat(overall))}">
+        <span style="font-size:24px;font-weight:800;color:${heatmapScoreColor(parseFloat(overall))}">${overall}</span>
+        <span style="font-size:13px;color:var(--dark)">Overall score</span>
+      </div>` : ""}
+      ${domains.map(d => d.avg !== null ? `
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <span style="width:10px;height:10px;border-radius:3px;background:${heatmapScoreColor(d.avg)};flex-shrink:0"></span>
+          <span style="font-size:12px;color:var(--dark);flex:1;line-height:1.3">${d.title}</span>
+          <span style="font-weight:700;font-size:13px;color:${heatmapScoreColor(d.avg)};flex-shrink:0">${d.avg.toFixed(1)}</span>
+          <span style="font-size:11px;color:var(--muted)">/5</span>
+        </div>` : `
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;opacity:.4">
+          <span style="width:10px;height:10px;border-radius:3px;background:#E5E7EB;flex-shrink:0"></span>
+          <span style="font-size:12px;color:var(--muted);flex:1">${d.title}</span>
+          <span style="font-size:11px;color:var(--muted)">—</span>
+        </div>`).join("")}
+    `;
+  }
+
+  html += `<div class="card" style="margin-bottom:20px">
+    <div class="card-header"><div class="card-title">Competency Heatmap</div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:10px">Week 2 — Baseline</div>
+        ${renderHmSummaryCard(w2domains, w2savedAt, "Week 2")}
       </div>
-      <div class="mentor-field">
-        <label>Heatmap Week 11 (Google Drive link)</label>
-        <input type="url" id="coach-hm11" value="${escHtml(coachData.heatmap_week11||"")}" placeholder="https://drive.google.com/...">
+      <div>
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:10px">Week 11 — Re-Assessment</div>
+        ${renderHmSummaryCard(w11domains, w11savedAt, "Week 11")}
       </div>
     </div>
-    <button class="btn btn-primary btn-sm" onclick="saveHeatmaps('${coachId}')">Save Heatmaps</button>
   </div>`;
 
   // Phase grid
@@ -1718,17 +1766,6 @@ async function saveCoachSettings(coachId) {
   } catch(e) { showToast("Error: " + e.message); }
 }
 
-async function saveHeatmaps(coachId) {
-  const hm2 = document.getElementById("coach-hm2")?.value?.trim() || "";
-  const hm11 = document.getElementById("coach-hm11")?.value?.trim() || "";
-  try {
-    await upsertCoachData(coachId, {
-      heatmap_week2: hm2 || null,
-      heatmap_week11: hm11 || null,
-    }, {});
-    showToast("Heatmaps saved &#10003;");
-  } catch(e) { showToast("Error: " + e.message); }
-}
 
 // ═══════════════════════════════════════════════════════════════════════
 // ADMIN: MANAGE USERS
