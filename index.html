@@ -1030,7 +1030,7 @@ async function openSession(sessionId, sessionTitle, coachId, isMentorView) {
   // Render heatmap inline if this is session 1b
   if (sessionId === "1b") {
     const hmContainer = document.getElementById("modal-heatmap-container");
-    if (hmContainer) renderHeatmap(hmContainer, coachId);
+    if (hmContainer) renderHeatmap(hmContainer, coachId, true);
   }
 }
 
@@ -1219,7 +1219,7 @@ function heatmapScoreColor(score) {
 // ═══════════════════════════════════════════════════════════════════════
 // HEATMAP VIEW
 // ═══════════════════════════════════════════════════════════════════════
-async function renderHeatmap(container, coachId) {
+async function renderHeatmap(container, coachId, week2Only = false) {
   const coachData = await getCoachData(coachId);
   const saved = coachData.data || {};
   const isCoach = currentUser.role === "coach" || currentUser._preview;
@@ -1396,14 +1396,14 @@ async function renderHeatmap(container, coachId) {
   }
 
   const week2html = buildHeatmapForm("2");
-  const week11html = buildHeatmapForm("11");
+  const week11html = week2Only ? "" : buildHeatmapForm("11");
 
   container.innerHTML = `
-    <div style="margin-bottom:20px">
+    ${!week2Only ? `<div style="margin-bottom:20px">
       <h2 style="font-family:Cambria,serif;font-size:22px;color:var(--dark)">Coaching Competency Heatmap</h2>
       <p style="color:var(--muted);font-size:14px;margin-top:4px">Rate each statement from Strongly Disagree to Strongly Agree. Scores save automatically.</p>
-    </div>
-    <div style="display:flex;gap:0;margin-bottom:24px;border-bottom:2px solid var(--border)">
+    </div>` : ""}
+    ${!week2Only ? `<div style="display:flex;gap:0;margin-bottom:24px;border-bottom:2px solid var(--border)">
       <button id="hm-tab-2" onclick="switchHeatmapTab('2','${coachId}')"
         style="padding:10px 22px;font-size:14px;font-weight:600;cursor:pointer;border:none;background:none;
         border-bottom:${activeWeek==="2"?"3px solid var(--blue)":"3px solid transparent"};
@@ -1418,7 +1418,8 @@ async function renderHeatmap(container, coachId) {
       </button>
     </div>
     <div id="hm-panel-2" style="display:${activeWeek==="2"?"block":"none"}">${week2html}</div>
-    <div id="hm-panel-11" style="display:${activeWeek==="11"?"block":"none"}">${week11html}</div>
+    <div id="hm-panel-11" style="display:${activeWeek==="11"?"block":"none"}">${week11html}</div>` :
+    `<div>${week2html}</div>`}
   `;
 }
 
