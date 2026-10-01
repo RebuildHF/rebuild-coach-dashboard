@@ -1145,32 +1145,230 @@ function closeModal() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
+// HEATMAP — DATA
+// ═══════════════════════════════════════════════════════════════════════
+const HEATMAP_DOMAINS = [
+  { id:"01", title:"Learning, Knowledge & Experience", phase:"Phase 2–3", statements:[
+    "I continually update my understanding of S&C methodologies through research, workshops, or certifications.",
+    "I can explain fundamental movement patterns (e.g., squat, hinge, press) and their progressions in detail.",
+    "I adapt my coaching approach based on new evidence, emerging trends, and athlete feedback.",
+    "I possess a thorough understanding of energy systems and how they relate to programming.",
+    "I am comfortable teaching high-level gymnastics skills and Olympic lifts, including regressions and progressions for different skill levels.",
+    "I regularly reflect on past coaching sessions to refine my knowledge and approach.",
+    "I have experience coaching diverse populations (e.g., beginners, masters, athletes returning from injury) with varying needs and goals.",
+    "I understand the principles of periodisation and how to structure training cycles for peak performance.",
+  ]},
+  { id:"02", title:"Coaching, Communicating & Leading", phase:"Phase 3–5", statements:[
+    "I communicate workout intentions, movement standards, and performance goals to athletes.",
+    "I offer feedback that is both constructive and motivational, balancing praise with actionable suggestions.",
+    "I adjust my communication style based on individual athlete needs, personalities, and learning preferences.",
+    "I foster an environment of mutual respect, collaboration, and fun, making athletes feel safe to ask questions.",
+    "I handle conflicts or challenges within the gym community proactively and fairly.",
+    "I inspire athletes by leading through example, consistently modelling integrity and commitment.",
+    "I encourage teamwork and camaraderie while respecting individual goals and limitations.",
+    "I listen actively to athlete concerns and incorporate their feedback into my coaching process.",
+  ]},
+  { id:"03", title:"Injury & Pain Triage, Management & Referral", phase:"Phase 4", statements:[
+    "I can quickly identify warning signs of injury or pain and adjust workouts to prevent further harm.",
+    "I am familiar with basic first-aid principles and can apply them appropriately when issues arise in the gym.",
+    "I know when to refer athletes to a healthcare professional (e.g., physiotherapist, doctor) for further assessment.",
+    "I can provide modifications or alternative exercises for athletes experiencing pain or mobility restrictions that support the athlete to meet the stimulus of the workout to the best of their ability.",
+    "I understand the fundamentals of overuse injuries and how to reduce their occurrence through programming.",
+    "I maintain open communication with athletes regarding discomfort and encourage them to report issues promptly.",
+    "I collaborate with relevant professionals (e.g., physios) to support athlete recovery and return to training.",
+    "I know how to document or track injury-related events and outcomes to improve future training prescriptions.",
+  ]},
+  { id:"04", title:"Personal Physical Capability", phase:"Phase 2", statements:[
+    "I can demonstrate key CrossFit/S&C movements safely and effectively, setting a technical standard for athletes.",
+    "I maintain a level of fitness that allows me to participate in or model workouts as needed.",
+    "I regularly train and test my own limits, which helps me empathise with athlete experiences.",
+    "I prioritise my own recovery (sleep, nutrition, stress management) to sustain a high coaching and performance standard.",
+    "I continuously work on my movement mechanics to ensure I'm a reliable visual example.",
+    "I understand my personal limits and seek help or delegate if a movement exceeds my capability to demonstrate safely.",
+    "I explore new drills or progressions personally before introducing them to athletes.",
+    "I practice consistent self-assessment, staying mindful of areas where I can further develop my own physical skills.",
+  ]},
+];
+const HEATMAP_LABELS = ["SD","D","N","A","SA"];
+const HEATMAP_COLORS = ["#EF4444","#F97316","#EAB308","#22C55E","#10B981"];
+
+function heatmapScoreColor(score) {
+  if (!score) return "#E5E7EB";
+  if (score < 2) return HEATMAP_COLORS[0];
+  if (score < 3) return HEATMAP_COLORS[1];
+  if (score < 4) return HEATMAP_COLORS[2];
+  if (score < 4.5) return HEATMAP_COLORS[3];
+  return HEATMAP_COLORS[4];
+}
+
+// ═══════════════════════════════════════════════════════════════════════
 // HEATMAP VIEW
 // ═══════════════════════════════════════════════════════════════════════
 async function renderHeatmap(container, coachId) {
   const coachData = await getCoachData(coachId);
-  const heatmap2 = coachData.heatmap_week2 || "";
-  const heatmap11 = coachData.heatmap_week11 || "";
+  const saved = coachData.data || {};
+  const isCoach = currentUser.role === "coach" || currentUser._preview;
+  const canEdit = isCoach; // only coach fills in their own heatmap
+
+  // Which week tab is active
+  const activeWeek = saved._heatmap_active_week || "2";
+
+  function buildHeatmapForm(week) {
+    const prefix = `hm${week}`;
+    const responses = saved[`heatmap_w${week}`] || {};
+    const isLocked = saved[`heatmap_w${week}_submitted`] === true && !canEdit;
+
+    let html = `<div style="margin-bottom:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span style="font-size:13px;color:var(--muted)">SD = Strongly Disagree &nbsp;·&nbsp; D = Disagree &nbsp;·&nbsp; N = Neutral &nbsp;·&nbsp; A = Agree &nbsp;·&nbsp; SA = Strongly Agree</span>
+    </div>`;
+
+    let overallNums = [];
+
+    for (const domain of HEATMAP_DOMAINS) {
+      const domainNums = [];
+      html += `<div class="card" style="margin-bottom:16px">
+        <div class="card-header">
+          <div>
+            <div class="card-title">${domain.id} &mdash; ${domain.title}</div>
+            <div class="card-sub">${domain.phase}</div>
+          </div>
+          <span id="${prefix}-domain-score-${domain.id}" style="font-size:22px;font-weight:700;color:var(--dark)"></span>
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead>
+            <tr style="color:var(--muted)">
+              <th style="text-align:left;padding:6px 8px;width:60%">Competency</th>
+              ${HEATMAP_LABELS.map(l=>`<th style="text-align:center;padding:6px 4px;width:8%">${l}</th>`).join("")}
+              <th style="text-align:center;padding:6px 8px;width:8%">Score</th>
+            </tr>
+          </thead>
+          <tbody>`;
+
+      domain.statements.forEach((stmt, si) => {
+        const key = `${domain.id}_${si+1}`;
+        const saved_val = responses[key] || "";
+        html += `<tr style="border-top:1px solid var(--border)">
+          <td style="padding:8px;line-height:1.4">${stmt}</td>`;
+        let scoreVal = "";
+        HEATMAP_LABELS.forEach((lbl, li) => {
+          const val = (li+1).toString();
+          const checked = saved_val === val ? "checked" : "";
+          if (checked) scoreVal = val;
+          html += `<td style="text-align:center;padding:8px 4px">
+            <input type="radio" name="${prefix}-${key}" value="${val}" ${checked} ${!canEdit ? "disabled" : ""}
+              onchange="updateHeatmapScore('${prefix}','${domain.id}','${coachId}','${week}')">
+          </td>`;
+        });
+        if (scoreVal) domainNums.push(parseInt(scoreVal));
+        const scoreColor = scoreVal ? heatmapScoreColor(parseInt(scoreVal)) : "#E5E7EB";
+        html += `<td style="text-align:center;padding:8px">
+          <span id="${prefix}-cell-${key}" style="display:inline-block;width:32px;height:32px;border-radius:6px;background:${scoreColor};line-height:32px;font-weight:700;font-size:13px;color:white">${scoreVal||""}</span>
+        </td></tr>`;
+      });
+      overallNums.push(...domainNums);
+      const domainAvg = domainNums.length ? (domainNums.reduce((a,b)=>a+b,0)/domainNums.length).toFixed(2) : "";
+      html += `</tbody></table>`;
+      if (domainAvg) {
+        html += `<div style="margin-top:8px;padding:8px 12px;background:var(--offwhite);border-radius:8px;display:flex;align-items:center;gap:10px">
+          <span style="width:14px;height:14px;border-radius:3px;background:${heatmapScoreColor(parseFloat(domainAvg))};display:inline-block"></span>
+          <span style="font-size:13px;color:var(--muted)">Domain average: <strong style="color:var(--dark)">${domainAvg}</strong> / 5</span>
+        </div>`;
+      }
+      html += `</div>`;
+    }
+
+    const overallAvg = overallNums.length ? (overallNums.reduce((a,b)=>a+b,0)/overallNums.length).toFixed(2) : null;
+    if (overallAvg) {
+      html += `<div class="card" style="margin-bottom:16px;background:${heatmapScoreColor(parseFloat(overallAvg))}18;border:2px solid ${heatmapScoreColor(parseFloat(overallAvg))}">
+        <div style="display:flex;align-items:center;gap:14px;padding:4px">
+          <span style="font-size:32px;font-weight:800;color:${heatmapScoreColor(parseFloat(overallAvg))}">${overallAvg}</span>
+          <div>
+            <div style="font-weight:700;font-size:15px">Overall Heatmap Score</div>
+            <div style="font-size:13px;color:var(--muted)">Average across all ${overallNums.length} rated statements</div>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    if (canEdit) {
+      html += `<div style="display:flex;gap:10px;margin-bottom:24px">
+        <button class="btn btn-primary" onclick="saveHeatmap('${prefix}','${coachId}','${week}')">Save Progress</button>
+      </div>`;
+    }
+
+    return html;
+  }
+
+  const week2html = buildHeatmapForm("2");
+  const week11html = buildHeatmapForm("11");
 
   container.innerHTML = `
     <div style="margin-bottom:20px">
       <h2 style="font-family:Cambria,serif;font-size:22px;color:var(--dark)">Coaching Competency Heatmap</h2>
-      <p style="color:var(--muted);font-size:14px;margin-top:4px">Your self-assessment snapshots across the 12-week program.</p>
+      <p style="color:var(--muted);font-size:14px;margin-top:4px">Rate each statement from Strongly Disagree to Strongly Agree. Scores save automatically.</p>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-      <div class="card">
-        <div class="card-header"><div><div class="card-title">Week 2 Baseline</div><div class="card-sub">Initial self-assessment</div></div></div>
-        ${heatmap2
-          ? `<a class="doc-link" href="${heatmap2}" target="_blank"><div class="doc-link-icon">&#128202;</div><div class="doc-link-text"><div class="doc-link-name">Heatmap &mdash; Week 2</div><div class="doc-link-type">Google Drive</div></div><span style="color:var(--blue);font-size:12px">Open &#8599;</span></a>`
-          : `<p style="color:var(--muted);font-size:14px">Not yet uploaded by your mentor.</p>`}
-      </div>
-      <div class="card">
-        <div class="card-header"><div><div class="card-title">Week 11 Re-Assessment</div><div class="card-sub">Program completion</div></div></div>
-        ${heatmap11
-          ? `<a class="doc-link" href="${heatmap11}" target="_blank"><div class="doc-link-icon">&#128202;</div><div class="doc-link-text"><div class="doc-link-name">Heatmap &mdash; Week 11</div><div class="doc-link-type">Google Drive</div></div><span style="color:var(--blue);font-size:12px">Open &#8599;</span></a>`
-          : `<p style="color:var(--muted);font-size:14px">Will be available at Week 11.</p>`}
-      </div>
-    </div>`;
+    <div style="display:flex;gap:0;margin-bottom:24px;border-bottom:2px solid var(--border)">
+      <button id="hm-tab-2" onclick="switchHeatmapTab('2','${coachId}')"
+        style="padding:10px 22px;font-size:14px;font-weight:600;cursor:pointer;border:none;background:none;
+        border-bottom:${activeWeek==="2"?"3px solid var(--blue)":"3px solid transparent"};
+        color:${activeWeek==="2"?"var(--blue)":"var(--muted)"}">
+        Week 2 — Baseline
+      </button>
+      <button id="hm-tab-11" onclick="switchHeatmapTab('11','${coachId}')"
+        style="padding:10px 22px;font-size:14px;font-weight:600;cursor:pointer;border:none;background:none;
+        border-bottom:${activeWeek==="11"?"3px solid var(--blue)":"3px solid transparent"};
+        color:${activeWeek==="11"?"var(--blue)":"var(--muted)"}">
+        Week 11 — Re-Assessment
+      </button>
+    </div>
+    <div id="hm-panel-2" style="display:${activeWeek==="2"?"block":"none"}">${week2html}</div>
+    <div id="hm-panel-11" style="display:${activeWeek==="11"?"block":"none"}">${week11html}</div>
+  `;
+}
+
+function switchHeatmapTab(week, coachId) {
+  document.getElementById("hm-panel-2").style.display = week==="2" ? "block" : "none";
+  document.getElementById("hm-panel-11").style.display = week==="11" ? "block" : "none";
+  ["2","11"].forEach(w => {
+    const btn = document.getElementById(`hm-tab-${w}`);
+    if (btn) {
+      btn.style.borderBottom = w===week ? "3px solid var(--blue)" : "3px solid transparent";
+      btn.style.color = w===week ? "var(--blue)" : "var(--muted)";
+    }
+  });
+}
+
+function updateHeatmapScore(prefix, domainId, coachId, week) {
+  // Update individual cell colors live as user selects
+  HEATMAP_DOMAINS.find(d=>d.id===domainId)?.statements.forEach((_, si) => {
+    const key = `${domainId}_${si+1}`;
+    const radios = document.querySelectorAll(`input[name="${prefix}-${key}"]`);
+    let val = "";
+    radios.forEach(r => { if (r.checked) val = r.value; });
+    const cell = document.getElementById(`${prefix}-cell-${key}`);
+    if (cell) {
+      const color = val ? heatmapScoreColor(parseInt(val)) : "#E5E7EB";
+      cell.style.background = color;
+      cell.textContent = val || "";
+    }
+  });
+}
+
+async function saveHeatmap(prefix, coachId, week) {
+  const responses = {};
+  for (const domain of HEATMAP_DOMAINS) {
+    domain.statements.forEach((_, si) => {
+      const key = `${domain.id}_${si+1}`;
+      const radios = document.querySelectorAll(`input[name="${prefix}-${key}"]`);
+      radios.forEach(r => { if (r.checked) responses[key] = r.value; });
+    });
+  }
+  try {
+    await upsertCoachData(coachId, {}, { [`heatmap_w${week}`]: responses });
+    showToast("Heatmap saved ✓");
+  } catch(e) {
+    showToast("Error saving: " + e.message);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════
