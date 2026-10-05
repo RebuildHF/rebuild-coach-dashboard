@@ -84,7 +84,10 @@
   .card-sub { font-size:13px; color:var(--muted); margin-top:2px; }
 
   /* Phase grid */
-  .phase-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:16px; }
+  .phase-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
+  .coach-body-layout { display:flex; gap:20px; align-items:flex-start; }
+  .coach-checklist-col { width:320px; flex-shrink:0; position:sticky; top:16px; }
+  .coach-phases-col { flex:1; min-width:0; }
   .phase-card { background:var(--white); border-radius:var(--radius); border:1px solid var(--border); overflow:hidden; transition:box-shadow .15s; }
   .phase-card:hover { box-shadow:0 4px 16px rgba(0,0,0,.08); }
   .phase-header { padding:14px 16px; display:flex; align-items:center; gap:12px; }
@@ -196,6 +199,8 @@
     .form-row, .form-row.three { grid-template-columns:1fr; }
     .modal { border-radius:12px; }
     .phase-grid { grid-template-columns:1fr; }
+    .coach-body-layout { flex-direction:column; }
+    .coach-checklist-col { width:100%; position:static; }
   }
 </style>
 </head>
@@ -1781,6 +1786,14 @@ async function openCoachView(coachId, coachName) {
 
   html += buildHmSummaryCard(w2domains, w2savedAt, w11domains, w11savedAt);
 
+  // Side-by-side layout: checklist (left) + phase grid (right) for mentor/admin
+  const isMentor = currentUser.role === "mentor" || currentUser.role === "admin";
+  if (isMentor) {
+    html += `<div class="coach-body-layout">`;
+    html += `<div class="coach-checklist-col">${renderMentorChecklist(coachId, sessionData)}</div>`;
+    html += `<div class="coach-phases-col">`;
+  }
+
   // Phase grid
   html += `<div class="phase-grid">`;
 
@@ -1838,11 +1851,10 @@ async function openCoachView(coachId, coachName) {
     html += `</div></div>`;
   }
 
-  html += `</div>`;
+  html += `</div>`; // close phase-grid
 
-  // ── Mentor weekly checklist (mentor/admin only) ──
-  if (currentUser.role === "mentor" || currentUser.role === "admin") {
-    html += renderMentorChecklist(coachId, sessionData);
+  if (isMentor) {
+    html += `</div></div>`; // close coach-phases-col + coach-body-layout
   }
 
   main.innerHTML = html;
@@ -1850,9 +1862,9 @@ async function openCoachView(coachId, coachName) {
 
 function renderMentorChecklist(coachId, sessionData) {
   const saved = sessionData.mentor_checklist || {};
-  let html = `<div class="card" style="margin-top:20px">
+  let html = `<div class="card">
     <div class="card-header">
-      <div class="card-title">&#128203; Mentor Weekly Checklist</div>
+      <div class="card-title">&#128203; Mentor Checklist</div>
       <span style="font-size:12px;color:var(--muted);font-weight:400">In-person tasks — visible to mentors only</span>
     </div>
     <div id="mentor-checklist-body">`;
