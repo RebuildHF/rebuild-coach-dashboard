@@ -1758,7 +1758,7 @@ async function openCoachView(coachId, coachName) {
   // Settings card
   html += `<div class="card" style="margin-bottom:20px">
     <div class="card-header"><div class="card-title">Coach Settings</div></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
       <div class="mentor-field">
         <label>Gym</label>
         <select id="coach-gym">
@@ -1770,11 +1770,8 @@ async function openCoachView(coachId, coachName) {
         <label>Enrolment Date</label>
         <input type="date" id="coach-enrolled" value="${coachData.enrolled_date||""}">
       </div>
-      <div class="mentor-field" style="display:flex;flex-direction:column;justify-content:flex-end">
-        <label style="visibility:hidden">save</label>
-        <button class="btn btn-primary btn-sm" onclick="saveCoachSettings('${coachId}')">Save Settings</button>
-      </div>
     </div>
+    <button class="btn btn-primary btn-sm" onclick="saveCoachSettings('${coachId}')">Save Settings</button>
   </div>`;
 
   // ── Heatmap summary card ──
