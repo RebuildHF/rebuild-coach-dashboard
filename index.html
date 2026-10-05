@@ -503,6 +503,96 @@ const PHASES = [
 ];
 
 // ═══════════════════════════════════════════════════════════════════════
+// MENTOR WEEKLY CHECKLIST
+// ═══════════════════════════════════════════════════════════════════════
+const MENTOR_CHECKLIST = [
+  { week:1, tasks:[
+    "Introduce coach to all staff and existing coaches",
+    "Complete orientation walkthrough of the gym (equipment, storage, procedures)",
+    "Discuss the 12-week program structure and expectations",
+    "Confirm enrolment date and set up dashboard access",
+    "Schedule regular weekly check-in time",
+  ]},
+  { week:2, tasks:[
+    "Review coach's Heatmap Self-Assessment results together",
+    "Debrief shadowing observations from Week 1",
+    "Identify top 2–3 development goals for the program",
+    "Begin draft IDP with coach",
+    "Confirm understanding of Rebuild values and culture",
+  ]},
+  { week:3, tasks:[
+    "Review Phase 2 session reflections (2A/2B/2C)",
+    "Observe coach assist with at least one class",
+    "Discuss knowledge gaps identified so far",
+    "Provide written mentor response to submitted reflections",
+    "Check coach is engaging with program resources",
+  ]},
+  { week:4, tasks:[
+    "Conduct first formal in-person feedback session",
+    "Review coach's understanding of movement patterns and energy systems",
+    "Assign a simple coaching task (e.g. warm-up or cool-down)",
+    "Discuss business integration — how Rebuild operates day-to-day",
+    "Update IDP with any revised goals",
+  ]},
+  { week:5, tasks:[
+    "Observe coach deliver a full warm-up or drill",
+    "Debrief coaching practice — specific, constructive feedback",
+    "Review Phase 3 reflections on communication & leadership",
+    "Discuss handling difficult member interactions",
+    "Confirm coach is tracking their own development notes",
+  ]},
+  { week:6, tasks:[
+    "Give coach opportunity to run a partial class under observation",
+    "Discuss leadership style and communication self-assessment",
+    "Review gym operations competency — what's clear vs. unclear",
+    "Provide written mentor response to any pending reflections",
+    "Mid-program check-in: revisit IDP and adjust if needed",
+  ]},
+  { week:7, tasks:[
+    "Review Phase 4 injury & pain triage content with coach",
+    "Discuss real or hypothetical injury scenarios",
+    "Confirm coach knows referral pathways (physio, doctor, etc.)",
+    "Observe how coach handles a member with a limitation in class",
+    "Ensure incident reporting process is understood",
+  ]},
+  { week:8, tasks:[
+    "Debrief risk management awareness — any gaps?",
+    "Review Phase 4 reflections and provide mentor responses",
+    "Discuss documentation practices for injuries/incidents",
+    "Give structured feedback on observable coaching improvements since Week 1",
+    "Confirm coach is on track for Phase 5 unlock",
+  ]},
+  { week:9, tasks:[
+    "Discuss 'world-best-standard' — what it means at Rebuild",
+    "Observe coach deliver a full class independently",
+    "Review programming and periodisation understanding",
+    "Encourage coach to identify one area of coaching mastery to pursue",
+    "Provide written mentor response to Phase 5 reflections",
+  ]},
+  { week:10, tasks:[
+    "Debrief full class delivery — detailed feedback session",
+    "Discuss member development practices — how coach tracks progress",
+    "Review any outstanding IDP goals and progress made",
+    "Identify any remaining gaps before graduation phase",
+    "Begin preparing graduation evaluation criteria",
+  ]},
+  { week:11, tasks:[
+    "Complete Week 11 Heatmap Re-Assessment with coach",
+    "Compare Week 2 vs Week 11 scores — discuss growth areas",
+    "Review portfolio of reflections and mentor responses",
+    "Conduct formal graduation evaluation conversation",
+    "Confirm coach's readiness to solo-coach at Rebuild",
+  ]},
+  { week:12, tasks:[
+    "Celebrate graduation — acknowledge growth and achievement",
+    "Set 3 coaching goals for the next 12 months",
+    "Discuss ongoing development activities post-program",
+    "Complete and sign off formal graduation record",
+    "Introduce to any broader team or mentorship opportunities",
+  ]},
+];
+
+// ═══════════════════════════════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════════════════════════════
 let currentUser = null;
@@ -1749,7 +1839,94 @@ async function openCoachView(coachId, coachName) {
   }
 
   html += `</div>`;
+
+  // ── Mentor weekly checklist (mentor/admin only) ──
+  if (currentUser.role === "mentor" || currentUser.role === "admin") {
+    html += renderMentorChecklist(coachId, sessionData);
+  }
+
   main.innerHTML = html;
+}
+
+function renderMentorChecklist(coachId, sessionData) {
+  const saved = sessionData.mentor_checklist || {};
+  let html = `<div class="card" style="margin-top:20px">
+    <div class="card-header">
+      <div class="card-title">&#128203; Mentor Weekly Checklist</div>
+      <span style="font-size:12px;color:var(--muted);font-weight:400">In-person tasks — visible to mentors only</span>
+    </div>
+    <div id="mentor-checklist-body">`;
+
+  for (const week of MENTOR_CHECKLIST) {
+    const weekKey = `w${week.week}`;
+    const allDone = week.tasks.every((_,ti) => saved[`${weekKey}_t${ti}`]);
+    const doneCt = week.tasks.filter((_,ti) => saved[`${weekKey}_t${ti}`]).length;
+    html += `<details style="border-bottom:1px solid var(--border);padding:0" ${week.week===1?"open":""}>
+      <summary style="padding:12px 16px;cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px;user-select:none;font-weight:600;font-size:14px">
+        <span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-size:11px;font-weight:700;background:${allDone?"var(--green)":"var(--blue)"};color:#fff">${week.week}</span>
+        Week ${week.week}
+        <span style="font-size:12px;font-weight:400;color:var(--muted);margin-left:4px">${doneCt}/${week.tasks.length} done</span>
+        ${allDone ? `<span class="pill pill-green" style="margin-left:auto">Complete</span>` : ""}
+      </summary>
+      <div style="padding:8px 16px 14px 16px">
+        <ul style="list-style:none;display:flex;flex-direction:column;gap:8px">`;
+    week.tasks.forEach((task, ti) => {
+      const key = `${weekKey}_t${ti}`;
+      const checked = saved[key] ? "checked" : "";
+      html += `<li style="display:flex;align-items:flex-start;gap:10px">
+        <input type="checkbox" id="mcl_${key}" data-coachid="${coachId}" data-key="${key}"
+          ${checked} onchange="saveMentorChecklistItem('${coachId}','${key}',this.checked)"
+          style="margin-top:3px;width:16px;height:16px;accent-color:var(--blue);flex-shrink:0;cursor:pointer">
+        <label for="mcl_${key}" style="font-size:14px;color:var(--text);cursor:pointer;line-height:1.4">${task}</label>
+      </li>`;
+    });
+    html += `</ul></div></details>`;
+  }
+
+  html += `</div></div>`;
+  return html;
+}
+
+async function saveMentorChecklistItem(coachId, key, value) {
+  try {
+    // Read existing checklist, merge the single key, then save
+    const coachData = await getCoachData(coachId);
+    const existing = (coachData.data || {}).mentor_checklist || {};
+    const updated = { ...existing, [key]: value };
+    await upsertCoachData(coachId, {}, { mentor_checklist: updated });
+    // Update summary badge without full re-render
+    const allCheckboxes = document.querySelectorAll(`[data-coachid="${coachId}"]`);
+    // Re-render just the summary counts
+    const countMap = {};
+    allCheckboxes.forEach(cb => {
+      const wk = cb.dataset.key.split("_")[0];
+      if (!countMap[wk]) countMap[wk] = { done: 0, total: 0 };
+      countMap[wk].total++;
+      if (cb.checked) countMap[wk].done++;
+    });
+    // Update each <summary> badge
+    document.querySelectorAll("#mentor-checklist-body details").forEach((det, i) => {
+      const wk = `w${i+1}`;
+      const { done, total } = countMap[wk] || { done: 0, total: 0 };
+      const summary = det.querySelector("summary");
+      const badge = summary.querySelector(".pill");
+      const countSpan = summary.querySelector("span[style*='font-weight:400']");
+      if (countSpan) countSpan.textContent = `${done}/${total} done`;
+      if (done === total) {
+        if (!badge) {
+          const s = document.createElement("span");
+          s.className = "pill pill-green";
+          s.style.marginLeft = "auto";
+          s.textContent = "Complete";
+          summary.appendChild(s);
+        }
+        summary.querySelector("span[style*='border-radius:50']").style.background = "var(--green)";
+      } else {
+        if (badge) badge.remove();
+        summary.querySelector("span[style*='border-radius:50']").style.background = "var(--blue)";
+      }
+    });
+  } catch(e) { showToast("Error saving: " + e.message); }
 }
 
 async function togglePhase(coachId, phaseId, currentlyUnlocked) {
