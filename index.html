@@ -643,6 +643,7 @@ function buildNav() {
 
 function switchTab(tabId) {
   currentTab = tabId;
+  selectedCoachId = null; // clear coach profile when switching tabs
   document.querySelectorAll(".nav-tab").forEach(t => {
     t.classList.toggle("active", t.dataset.tab === tabId);
   });
@@ -1156,7 +1157,12 @@ async function saveSession(sessionId, coachId) {
 
 function closeModal() {
   document.getElementById("session-modal").classList.remove("open");
-  if (currentTab) renderTab(currentTab);
+  // If a coach profile was open when the modal launched, return to it
+  if (selectedCoachId && (currentTab === "all-coaches" || currentTab === "my-coaches")) {
+    openCoachView(selectedCoachId);
+  } else if (currentTab) {
+    renderTab(currentTab);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════
