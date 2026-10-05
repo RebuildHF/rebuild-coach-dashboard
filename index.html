@@ -1770,7 +1770,8 @@ async function openCoachView(coachId, coachName) {
         <label>Enrolment Date</label>
         <input type="date" id="coach-enrolled" value="${coachData.enrolled_date||""}">
       </div>
-      <div style="display:flex;align-items:flex-end">
+      <div class="mentor-field" style="display:flex;flex-direction:column;justify-content:flex-end">
+        <label style="visibility:hidden">save</label>
         <button class="btn btn-primary btn-sm" onclick="saveCoachSettings('${coachId}')">Save Settings</button>
       </div>
     </div>
