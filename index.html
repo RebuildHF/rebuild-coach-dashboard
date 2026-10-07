@@ -364,6 +364,9 @@ const PHASES = [
   { id:1, title:"Orientation & Self-Assessment", weeks:"Weeks 1–2", unlockDay:0,
     sessions:[
       { id:"1a", title:"Introduction & Shadowing", video:"https://youtu.be/fAwf9NZoOOg",
+        defaultDocs:[
+          { name:"Shadowing Observation Checklist", url:"https://docs.google.com/document/d/1LdfQAq_oDQcQARNR5ZjKwn1AreOly1sN/edit?usp=drive_link", type:"Word Document" }
+        ],
         questions:[
           "What stood out to you most during your shadowing shifts?",
           "What coaching behaviours did you observe that you want to replicate?",
@@ -961,7 +964,8 @@ async function openSession(sessionId, sessionTitle, coachId, isMentorView) {
 
   const defaultVideo = phaseSession?.video || "";
   const videoUrl = globalSessionData[`${sessionId}_video`] || defaultVideo;
-  const docs = globalSessionData[`${sessionId}_docs`] || [];
+  const adminDocs = globalSessionData[`${sessionId}_docs`] || [];
+  const docs = [...(phaseSession?.defaultDocs || []), ...adminDocs];
   const notes = globalSessionData[`${sessionId}_notes`] || "";
   const canEdit = currentUser.role === "mentor" || currentUser.role === "admin";
   const isCoach = currentUser.role === "coach";
@@ -1008,7 +1012,7 @@ async function openSession(sessionId, sessionTitle, coachId, isMentorView) {
         <div class="doc-link-icon">&#128196;</div>
         <div class="doc-link-text">
           <div class="doc-link-name">${escHtml(doc.name)}</div>
-          <div class="doc-link-type">Google Drive</div>
+          <div class="doc-link-type">${escHtml(doc.type || 'Google Drive')}</div>
         </div>
         <span style="color:var(--blue);font-size:12px">Open &#8599;</span>
       </a>`;
