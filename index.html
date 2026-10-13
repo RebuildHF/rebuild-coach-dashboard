@@ -182,6 +182,40 @@
   .pill-grey { background:#F3F4F6; color:var(--locked); }
   .pill-orange { background:#FEF3C7; color:#D97706; }
 
+  /* Phase survey */
+  .phase-survey-btn { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; margin-top:12px; padding:9px 16px; background:var(--blue-light); color:var(--blue); border:1.5px solid #C3D7F9; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; transition:all .15s; }
+  .phase-survey-btn:hover { background:var(--blue); color:var(--white); border-color:var(--blue); }
+  .phase-survey-btn.completed { background:#ECFDF5; color:#059669; border-color:#A7F3D0; }
+  .phase-survey-btn.completed:hover { background:#D1FAE5; }
+  .survey-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:300; display:none; align-items:center; justify-content:center; padding:16px; }
+  .survey-modal-overlay.open { display:flex; }
+  .survey-modal { background:var(--white); border-radius:16px; width:100%; max-width:660px; max-height:92vh; overflow-y:auto; }
+  .survey-modal-header { padding:20px 24px 16px; border-bottom:1px solid var(--border); display:flex; align-items:flex-start; justify-content:space-between; gap:12px; position:sticky; top:0; background:var(--white); z-index:1; }
+  .survey-modal-title { font-family:Cambria,serif; font-size:20px; color:var(--dark); }
+  .survey-modal-sub { font-size:13px; color:var(--muted); margin-top:2px; }
+  .survey-modal-body { padding:20px 24px 24px; }
+  .survey-section { margin-bottom:28px; }
+  .survey-section-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.8px; color:var(--muted); margin-bottom:4px; }
+  .survey-section-desc { font-size:13px; color:var(--muted); margin-bottom:14px; line-height:1.5; }
+  .survey-q { margin-bottom:20px; }
+  .survey-q:last-child { margin-bottom:0; }
+  .survey-q-label { font-size:13px; font-weight:600; color:var(--dark); margin-bottom:10px; line-height:1.4; }
+  .survey-q-num { color:var(--blue); margin-right:4px; }
+  .likert-row { display:flex; gap:6px; align-items:center; }
+  .likert-btn { flex:1; padding:7px 4px; border:1.5px solid var(--border); border-radius:7px; background:var(--white); font-size:13px; font-weight:600; color:var(--muted); cursor:pointer; text-align:center; transition:all .15s; }
+  .likert-btn:hover { border-color:var(--blue); color:var(--blue); }
+  .likert-btn.selected { background:var(--blue); border-color:var(--blue); color:var(--white); }
+  .likert-labels { display:flex; justify-content:space-between; margin-top:4px; padding:0 2px; }
+  .likert-label { font-size:10px; color:var(--muted); }
+  .survey-textarea { width:100%; padding:10px 13px; border:1.5px solid var(--border); border-radius:7px; font-size:14px; font-family:inherit; resize:vertical; min-height:64px; outline:none; transition:border .2s; }
+  .survey-textarea:focus { border-color:var(--blue); }
+  .survey-divider { border:none; border-top:1px solid var(--border); margin:24px 0; }
+  .survey-footer { display:flex; gap:10px; align-items:center; }
+  .survey-complete-banner { background:#ECFDF5; border:1px solid #A7F3D0; border-radius:10px; padding:16px 20px; display:flex; align-items:center; gap:12px; margin-bottom:20px; }
+  .survey-complete-icon { font-size:22px; }
+  .survey-complete-text { font-size:14px; color:#059669; font-weight:600; }
+  .survey-complete-sub { font-size:12px; color:#6B7280; margin-top:2px; }
+
   /* Loading */
   .loading { display:flex; align-items:center; justify-content:center; padding:60px; color:var(--muted); gap:10px; }
   .spinner { width:20px; height:20px; border:2px solid var(--border); border-top-color:var(--blue); border-radius:50%; animation:spin .7s linear infinite; }
@@ -331,6 +365,20 @@
 </div>
 
 <!-- Session Modal -->
+<!-- Phase Survey Modal -->
+<div class="survey-modal-overlay" id="survey-modal">
+  <div class="survey-modal">
+    <div class="survey-modal-header">
+      <div>
+        <div class="survey-modal-title" id="survey-modal-title"></div>
+        <div class="survey-modal-sub" id="survey-modal-sub"></div>
+      </div>
+      <button class="modal-close" onclick="closeSurveyModal()">&times;</button>
+    </div>
+    <div class="survey-modal-body" id="survey-modal-body"></div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="session-modal">
   <div class="modal">
     <div class="modal-header">
@@ -934,6 +982,12 @@ async function renderMyProgram(container, coachId) {
     if (!isUnlocked && unlockDateStr) {
       html += `<div class="lock-date">&#128274; Unlocks ${unlockDateStr}</div>`;
     }
+    if (isUnlocked) {
+      const surveyDone = sessionData[`phase${phase.id}_survey_submitted`] === true;
+      html += `<button class="phase-survey-btn ${surveyDone ? 'completed' : ''}" onclick="openPhaseSurvey(${phase.id},'${coachId}',event)">
+        ${surveyDone ? '&#10003; Phase Survey Completed' : '&#128203; Complete Phase Survey'}
+      </button>`;
+    }
     html += `</div></div>`;
   }
 
@@ -1263,6 +1317,195 @@ function closeModal() {
   } else if (currentTab) {
     renderTab(currentTab);
   }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// PHASE SURVEY (Kirkpatrick Level 1 & 2)
+// ═══════════════════════════════════════════════════════════════════════
+
+const SURVEY_L1_QUESTIONS = [
+  { id:"l1_relevant", text:"The content covered in this phase was relevant to my coaching role." },
+  { id:"l1_engaging", text:"The sessions and activities in this phase were engaging and kept my interest." },
+  { id:"l1_paced",    text:"The pace and workload of this phase was appropriate." },
+  { id:"l1_support",  text:"I felt supported by my mentor throughout this phase." },
+  { id:"l1_value",    text:"Overall, I found this phase valuable to my development as a coach." },
+];
+
+const SURVEY_L2_QUESTIONS = [
+  { id:"l2_structure",  text:"I can structure a class from brief to cool-down with clear transitions." },
+  { id:"l2_cueing",     text:"I can deliver effective technical cues for the movements in today's programming." },
+  { id:"l2_scaling",    text:"I can scale and modify movements for members of different abilities in the moment." },
+  { id:"l2_energy",     text:"I can manage the energy and pacing of a class to keep members engaged." },
+  { id:"l2_identify",   text:"I can identify when a member is struggling and respond appropriately." },
+  { id:"l2_names",      text:"I use members' names and make them feel individually coached, not just instructed." },
+  { id:"l2_unexpected", text:"I feel confident handling the unexpected (late arrivals, equipment issues, injuries)." },
+  { id:"l2_feedback",   text:"I know when to give feedback and when to let a member work through something themselves." },
+];
+
+let _surveyContext = { phaseId: null, coachId: null };
+
+async function openPhaseSurvey(phaseId, coachId, e) {
+  if (e) e.stopPropagation();
+  const phase = PHASES.find(p => p.id === phaseId);
+  if (!phase) return;
+
+  _surveyContext = { phaseId, coachId };
+
+  document.getElementById("survey-modal-title").textContent = `Phase ${phaseId} Survey`;
+  document.getElementById("survey-modal-sub").textContent = phase.title;
+
+  const body = document.getElementById("survey-modal-body");
+  body.innerHTML = `<div class="loading"><div class="spinner"></div> Loading&hellip;</div>`;
+  document.getElementById("survey-modal").classList.add("open");
+
+  const coachData = await getCoachData(coachId);
+  const sd = coachData.data || {};
+  const existing = sd[`phase${phaseId}_survey`] || null;
+  const submitted = sd[`phase${phaseId}_survey_submitted`] === true;
+
+  body.innerHTML = renderSurveyBody(phaseId, existing, submitted);
+}
+
+function renderSurveyBody(phaseId, existing, submitted) {
+  let html = "";
+
+  if (submitted && existing) {
+    html += `<div class="survey-complete-banner">
+      <div class="survey-complete-icon">&#10003;</div>
+      <div>
+        <div class="survey-complete-text">Survey completed</div>
+        <div class="survey-complete-sub">Submitted ${existing.submitted_at ? new Date(existing.submitted_at).toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"}) : ""}</div>
+      </div>
+    </div>`;
+  }
+
+  // Level 1
+  html += `<div class="survey-section">
+    <div class="survey-section-label">Level 1 &mdash; Reaction</div>
+    <div class="survey-section-desc">How did you experience this phase? Rate each statement from 1 (strongly disagree) to 5 (strongly agree).</div>`;
+
+  for (const q of SURVEY_L1_QUESTIONS) {
+    const val = existing ? existing[q.id] : null;
+    html += `<div class="survey-q">
+      <div class="survey-q-label">${q.text}</div>
+      <div class="likert-row">`;
+    for (let i = 1; i <= 5; i++) {
+      const sel = val == i ? " selected" : "";
+      html += `<button class="likert-btn${sel}" ${submitted?"disabled":""} onclick="selectLikert('${q.id}',${i},this)">${i}</button>`;
+    }
+    html += `</div>
+      <div class="likert-labels"><span class="likert-label">Strongly disagree</span><span class="likert-label">Strongly agree</span></div>
+    </div>`;
+  }
+
+  html += `<div class="survey-q">
+    <div class="survey-q-label">What was the most useful part of this phase for your coaching development?</div>
+    <textarea class="survey-textarea" id="sv_l1_best" ${submitted?"disabled":""} placeholder="Your answer…">${existing?.l1_best||""}</textarea>
+  </div>
+  <div class="survey-q">
+    <div class="survey-q-label">What could be improved, or what would have made this phase more useful?</div>
+    <textarea class="survey-textarea" id="sv_l1_improve" ${submitted?"disabled":""} placeholder="Your answer…">${existing?.l1_improve||""}</textarea>
+  </div>
+  </div>`;
+
+  html += `<hr class="survey-divider">`;
+
+  // Level 2
+  html += `<div class="survey-section">
+    <div class="survey-section-label">Level 2 &mdash; Learning</div>
+    <div class="survey-section-desc">Rate your current confidence in each coaching competency from 1 (not confident at all) to 5 (fully confident and doing this consistently).</div>`;
+
+  for (const q of SURVEY_L2_QUESTIONS) {
+    const val = existing ? existing[q.id] : null;
+    html += `<div class="survey-q">
+      <div class="survey-q-label">${q.text}</div>
+      <div class="likert-row">`;
+    for (let i = 1; i <= 5; i++) {
+      const sel = val == i ? " selected" : "";
+      html += `<button class="likert-btn${sel}" ${submitted?"disabled":""} onclick="selectLikert('${q.id}',${i},this)">${i}</button>`;
+    }
+    html += `</div>
+      <div class="likert-labels"><span class="likert-label">Not confident</span><span class="likert-label">Fully confident</span></div>
+    </div>`;
+  }
+
+  html += `<div class="survey-q">
+    <div class="survey-q-label">What is the one coaching behaviour you will focus on improving before the next phase?</div>
+    <textarea class="survey-textarea" id="sv_l2_focus" ${submitted?"disabled":""} placeholder="Your answer…">${existing?.l2_focus||""}</textarea>
+  </div>
+  </div>`;
+
+  if (!submitted) {
+    html += `<div class="survey-footer">
+      <button class="btn btn-primary" onclick="submitPhaseSurvey(${phaseId})">Submit Survey</button>
+      <button class="btn btn-ghost" onclick="saveSurveyDraft(${phaseId})">Save Draft</button>
+    </div>`;
+  }
+
+  return html;
+}
+
+function selectLikert(qId, val, btn) {
+  const row = btn.closest(".likert-row");
+  row.querySelectorAll(".likert-btn").forEach(b => b.classList.remove("selected"));
+  btn.classList.add("selected");
+}
+
+function collectSurveyAnswers() {
+  const data = {};
+  for (const q of [...SURVEY_L1_QUESTIONS, ...SURVEY_L2_QUESTIONS]) {
+    const row = document.querySelector(`[onclick*="'${q.id}'"]`)?.closest(".survey-q")?.querySelector(".likert-row");
+    const sel = row?.querySelector(".likert-btn.selected");
+    data[q.id] = sel ? parseInt(sel.textContent) : null;
+  }
+  data.l1_best    = document.getElementById("sv_l1_best")?.value || "";
+  data.l1_improve = document.getElementById("sv_l1_improve")?.value || "";
+  data.l2_focus   = document.getElementById("sv_l2_focus")?.value || "";
+  return data;
+}
+
+async function saveSurveyDraft(phaseId) {
+  const { coachId } = _surveyContext;
+  const data = collectSurveyAnswers();
+  data.saved_at = new Date().toISOString();
+  try {
+    await upsertCoachData(coachId, {}, { [`phase${phaseId}_survey`]: data });
+    showToast("Draft saved");
+  } catch(e) {
+    showToast("Save failed — try again");
+  }
+}
+
+async function submitPhaseSurvey(phaseId) {
+  const { coachId } = _surveyContext;
+  const data = collectSurveyAnswers();
+
+  // Check all likert answered
+  const allL1 = SURVEY_L1_QUESTIONS.every(q => data[q.id] !== null);
+  const allL2 = SURVEY_L2_QUESTIONS.every(q => data[q.id] !== null);
+  if (!allL1 || !allL2) {
+    showToast("Please answer all rating questions before submitting");
+    return;
+  }
+
+  data.submitted_at = new Date().toISOString();
+
+  try {
+    await upsertCoachData(coachId, {}, {
+      [`phase${phaseId}_survey`]: data,
+      [`phase${phaseId}_survey_submitted`]: true,
+    });
+    showToast("Survey submitted — thank you!");
+    closeSurveyModal();
+    // Refresh phase card to show completed state
+    if (currentTab) renderTab(currentTab);
+  } catch(e) {
+    showToast("Submission failed — try again");
+  }
+}
+
+function closeSurveyModal() {
+  document.getElementById("survey-modal").classList.remove("open");
 }
 
 // ═══════════════════════════════════════════════════════════════════════
