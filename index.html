@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Rebuild Coach Development</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
 <style>
   :root {
     --blue: #3478EB;
@@ -183,6 +184,8 @@
   .pill-orange { background:#FEF3C7; color:#D97706; }
 
   /* Phase survey */
+  .idp-generate-btn { display:inline-flex; align-items:center; gap:8px; margin-top:12px; padding:9px 18px; background:#ECFDF5; color:#059669; border:1.5px solid #A7F3D0; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; transition:all .15s; }
+  .idp-generate-btn:hover { background:#059669; color:var(--white); border-color:#059669; }
   .phase-survey-btn { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; margin-top:12px; padding:9px 16px; background:var(--blue-light); color:var(--blue); border:1.5px solid #C3D7F9; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; transition:all .15s; }
   .phase-survey-btn:hover { background:var(--blue); color:var(--white); border-color:var(--blue); }
   .phase-survey-btn.completed { background:#ECFDF5; color:#059669; border-color:#A7F3D0; }
@@ -1095,6 +1098,11 @@ async function openSession(sessionId, sessionTitle, coachId, isMentorView) {
 
     if (isSubmitted) {
       html += `<div class="reflection-submitted-badge">&#10003; Reflection submitted — thank you!</div>`;
+      if (sessionId === "1c") {
+        html += `<button class="idp-generate-btn" onclick="generateIDP('${coachId}')">
+          <span>&#128196;</span> Download My IDP
+        </button>`;
+      }
     } else if (isCoach) {
       html += `<p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Reflect on this session and answer the questions below. Once you submit, your responses will be locked and shared with your mentor.</p>`;
     }
@@ -2344,6 +2352,165 @@ function escHtml(str) {
     .replace(/>/g,"&gt;")
     .replace(/"/g,"&quot;")
     .replace(/'/g,"&#39;");
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// IDP GENERATOR — Session 1C answers → downloadable Word doc
+// ═══════════════════════════════════════════════════════════════════════
+async function generateIDP(coachId) {
+  try {
+    showToast("Generating your IDP...");
+
+    // Pull coach name & 1C answers from Supabase
+    const { data: userRow } = await sb.from("users").select("name").eq("id", coachId).single();
+    const coachName = userRow?.name || "Coach";
+
+    const { data: coachRow } = await sb.from("coach_data").select("data").eq("coach_id", coachId).single();
+    const sessionData = coachRow?.data || {};
+    const reflection = sessionData["1c_reflection"] || {};
+
+    const answers = {
+      q1: reflection.q1 || "",
+      q2: reflection.q2 || "",
+      q3: reflection.q3 || "",
+      q4: reflection.q4 || "",
+    };
+
+    const date = new Date().toLocaleDateString("en-AU", { day:"numeric", month:"long", year:"numeric" });
+
+    const {
+      Document, Packer, Paragraph, TextRun,
+      AlignmentType, BorderStyle, Table, TableRow, TableCell,
+      WidthType, ShadingType
+    } = docx;
+
+    const BLUE = "3478EB", DARK = "111827", LIGHT = "E8F0FD", BORDER_C = "C3D7F9", WHITE = "FFFFFF", MUTED = "6B7280";
+
+    const divider = () => new Paragraph({
+      border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: BORDER_C } },
+      spacing: { before: 160, after: 160 },
+      children: []
+    });
+
+    const labelValue = (label, value) => new Paragraph({
+      children: [
+        new TextRun({ text: label + "  ", bold: true, size: 22, color: BLUE }),
+        new TextRun({ text: value, size: 22, color: DARK }),
+      ],
+      spacing: { after: 100 },
+    });
+
+    const sectionHeader = (text) => new Paragraph({
+      children: [new TextRun({ text: text.toUpperCase(), bold: true, size: 20, color: BLUE, characterSpacing: 80 })],
+      spacing: { before: 320, after: 80 },
+      shading: { type: ShadingType.CLEAR, fill: LIGHT },
+    });
+
+    const answerBlock = (question, answer) => [
+      new Paragraph({
+        children: [new TextRun({ text: question, bold: true, size: 22, color: DARK })],
+        spacing: { before: 160, after: 60 },
+      }),
+      new Paragraph({
+        children: [new TextRun({ text: answer || "(Not yet answered)", size: 22, color: answer ? DARK : MUTED, italics: !answer })],
+        spacing: { after: 120 },
+        indent: { left: 240 },
+      }),
+    ];
+
+    const makeTable = (headers, colWidths, extraRows) => {
+      const headerRow = new TableRow({
+        tableHeader: true,
+        children: headers.map((text, i) => new TableCell({
+          width: { size: colWidths[i], type: WidthType.DXA },
+          shading: { type: ShadingType.CLEAR, fill: BLUE },
+          children: [new Paragraph({ children: [new TextRun({ text, bold: true, size: 20, color: WHITE })] })],
+        })),
+      });
+      const dataRows = extraRows.map(cells => new TableRow({
+        children: cells.map((text, i) => new TableCell({
+          width: { size: colWidths[i], type: WidthType.DXA },
+          children: [new Paragraph({ children: [new TextRun({ text: text || " ", size: 22 })] })],
+        })),
+      }));
+      return new Table({ width: { size: 7740, type: WidthType.DXA }, rows: [headerRow, ...dataRows] });
+    };
+
+    const actionTable = makeTable(
+      ["Development Goal", "Actions / Strategies", "Target Date", "Status"],
+      [1800, 2700, 1800, 1440],
+      [["","","",""],["","","",""],["","","",""],["","","",""]]
+    );
+
+    const checkInTable = makeTable(
+      ["Week", "Progress Check-In Notes", "Adjustments Made", "Mentor Sign-Off"],
+      [1500, 2700, 1800, 1740],
+      [["Week 4","","",""],["Week 8","","",""],["Week 12","","",""]]
+    );
+
+    const doc = new Document({
+      styles: { default: { document: { run: { font: "Calibri", size: 22 } } } },
+      sections: [{
+        properties: { page: { size: { width: 12240, height: 15840 } } },
+        children: [
+          new Paragraph({ children: [new TextRun({ text: "REBUILD HEALTH & FITNESS", bold: true, size: 28, color: BLUE, characterSpacing: 80 })], alignment: AlignmentType.CENTER, spacing: { before: 480, after: 80 } }),
+          new Paragraph({ children: [new TextRun({ text: "Individual Development Plan", bold: true, size: 40, color: DARK })], alignment: AlignmentType.CENTER, spacing: { after: 80 } }),
+          new Paragraph({ children: [new TextRun({ text: "12-Week Coach Onboarding Program", size: 24, color: MUTED })], alignment: AlignmentType.CENTER, spacing: { after: 320 } }),
+          divider(),
+          labelValue("Coach:", coachName),
+          labelValue("Date created:", date),
+          labelValue("Mentor:", ""),
+          labelValue("Review dates:", "Week 4 · Week 8 · Week 12"),
+          divider(),
+
+          sectionHeader("Section 1 — Goals & Intentions"),
+          new Paragraph({ children: [new TextRun({ text: "The following goals were captured at the start of your 12-week program.", size: 22, color: DARK })], spacing: { after: 140 } }),
+          ...answerBlock("What are your 2–3 primary goals for the 12-week program?", answers.q1),
+          ...answerBlock("What does success look like for you at the end of this journey?", answers.q2),
+          divider(),
+
+          sectionHeader("Section 2 — Self-Awareness"),
+          new Paragraph({ children: [new TextRun({ text: "Understanding your potential blockers is the first step to managing them.", size: 22, color: DARK })], spacing: { after: 140 } }),
+          ...answerBlock("What habits or mindsets might get in the way of achieving your goals?", answers.q3),
+          divider(),
+
+          sectionHeader("Section 3 — Support & Mentorship"),
+          ...answerBlock("What support do you need from your mentor to make the most of this program?", answers.q4),
+          divider(),
+
+          sectionHeader("Section 4 — Development Action Plan"),
+          new Paragraph({ children: [new TextRun({ text: "Work with your mentor to complete the action plan below.", size: 22, color: DARK })], spacing: { after: 120 } }),
+          new Paragraph({ children: [], spacing: { after: 120 } }),
+          actionTable,
+          new Paragraph({ children: [], spacing: { after: 240 } }),
+          divider(),
+
+          sectionHeader("Section 5 — Progress Check-Ins"),
+          new Paragraph({ children: [new TextRun({ text: "Record your reflections and any adjustments at each milestone review with your mentor.", size: 22, color: DARK })], spacing: { after: 120 } }),
+          new Paragraph({ children: [], spacing: { after: 120 } }),
+          checkInTable,
+          new Paragraph({ children: [], spacing: { after: 240 } }),
+          divider(),
+
+          new Paragraph({ children: [new TextRun({ text: "This document is a living plan — revisit and update it with your mentor at each check-in.", size: 20, color: MUTED, italics: true })], alignment: AlignmentType.CENTER, spacing: { before: 120 } }),
+        ]
+      }]
+    });
+
+    const blob = await Packer.toBlob(doc);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `IDP_${coachName.replace(/\s+/g,"_")}.docx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast("IDP downloaded!");
+  } catch(e) {
+    console.error(e);
+    showToast("Error generating IDP: " + e.message);
+  }
 }
 
 function showToast(msg) {
