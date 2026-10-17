@@ -2284,10 +2284,30 @@ async function saveCoachSettings(coachId) {
   const gym = document.getElementById("coach-gym")?.value || "";
   const enrolled = document.getElementById("coach-enrolled")?.value || null;
   try {
+    // Check previous enrolled_date to detect first-time enrolment
+    const prevData = await getCoachData(coachId);
+    const wasEnrolled = !!prevData?.enrolled_date;
+
     await upsertCoachData(coachId, { enrolled_date: enrolled || null }, {});
     const { error } = await sb.from("users").update({ gym }).eq("id", coachId);
     if (error) throw error;
     showToast("Settings saved &#10003;");
+
+    // Send welcome email when enrolled_date is set for the first time
+    if (enrolled && !wasEnrolled) {
+      try {
+        await fetch(`${SUPABASE_URL}/functions/v1/send-welcome-email`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${SUPABASE_KEY}`,
+          },
+          body: JSON.stringify({ coach_id: coachId }),
+        });
+      } catch(emailErr) {
+        console.warn("Welcome email failed (non-fatal):", emailErr);
+      }
+    }
   } catch(e) { showToast("Error: " + e.message); }
 }
 
