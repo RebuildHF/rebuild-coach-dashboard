@@ -337,7 +337,7 @@ serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: "Rebuild Coaching <digest@rebuildcoaching.com.au>",
+          from: "Rebuild Coaching <onboarding@resend.dev>",
           to: coach.email,
           subject: `Your weekly coaching digest — ${new Date().toLocaleDateString("en-AU", { day: "numeric", month: "long" })}`,
           html,
