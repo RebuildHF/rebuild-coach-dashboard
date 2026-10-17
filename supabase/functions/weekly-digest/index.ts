@@ -289,6 +289,191 @@ function buildEmailHtml(coach: CoachRow): string {
 </html>`;
 }
 
+function buildAdminSummaryHtml(
+  coaches: CoachRow[],
+  sendResults: Array<{ coach: string; status: string; error?: string }>
+): string {
+  const BLUE = "#3478EB";
+  const DARK = "#111827";
+  const MUTED = "#6B7280";
+  const LIGHT_BG = "#F9FAFB";
+  const BORDER = "#E5E7EB";
+  const GREEN = "#059669";
+  const AMBER = "#D97706";
+  const RED = "#DC2626";
+
+  const totalSessions = PHASES.flatMap(p => p.sessions).length;
+  const now = new Date();
+  const weekOf = now.toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" });
+
+  // Build one row per coach
+  const rows = coaches.map(coach => {
+    const data = coach.data;
+    const days = coach.enrolled_date ? daysSince(coach.enrolled_date) : 0;
+
+    // Current unlocked phase
+    let currentPhase = PHASES[0];
+    for (const p of PHASES) {
+      if (isUnlockedNow(p, days)) currentPhase = p;
+    }
+
+    // Sessions completed
+    const completed = PHASES.flatMap(p => p.sessions).filter(sid => data[`${sid}_submitted`]);
+    const pct = Math.round((completed.length / totalSessions) * 100);
+
+    // Pending survey
+    let surveySuffix = "";
+    for (let i = PHASES.length - 1; i >= 0; i--) {
+      const p = PHASES[i];
+      if (isUnlockedNow(p, days)) {
+        if (!data[`phase${p.phase}_survey_submitted`]) surveySuffix = ` ⚠`;
+        break;
+      }
+    }
+
+    // Mentor feedback pending (submitted but no response yet)
+    const awaitingFeedback = PHASES.flatMap(p => p.sessions).filter(
+      sid => data[`${sid}_submitted`] && !data[`${sid}_mentor_response`]
+    ).length;
+
+    // Unlocking next week
+    const unlockingNext = coach.enrolled_date
+      ? PHASES.filter(p => isUnlockingNextWeek(p, coach.enrolled_date!)).map(p => `Phase ${p.phase}`)
+      : [];
+
+    const emailStatus = sendResults.find(r => r.coach === coach.name)?.status ?? "not sent";
+    const emailSent = emailStatus === "sent";
+
+    return { coach, currentPhase, completed: completed.length, pct, surveySuffix, awaitingFeedback, unlockingNext, emailSent, days };
+  });
+
+  // Sort: most behind first (lowest %)
+  rows.sort((a, b) => a.pct - b.pct);
+
+  const coachRows = rows.map(r => {
+    const progressBar = `
+      <div style="background:#E5E7EB;border-radius:99px;height:6px;width:100px;display:inline-block;vertical-align:middle;">
+        <div style="background:${BLUE};height:6px;width:${r.pct}px;border-radius:99px;max-width:100px;"></div>
+      </div>
+      <span style="font-size:11px;color:${MUTED};margin-left:6px">${r.pct}%</span>`;
+
+    const phaseLabel = `Phase ${r.currentPhase.phase}${r.surveySuffix}`;
+    const unlockCell = r.unlockingNext.length > 0
+      ? `<span style="color:${AMBER};font-size:12px;font-weight:600">${r.unlockingNext.join(", ")} opens</span>`
+      : `<span style="color:${MUTED};font-size:12px">—</span>`;
+    const feedbackCell = r.awaitingFeedback > 0
+      ? `<span style="color:${AMBER};font-size:12px">${r.awaitingFeedback} pending</span>`
+      : `<span style="color:${GREEN};font-size:12px">✓ up to date</span>`;
+    const emailCell = r.emailSent
+      ? `<span style="color:${GREEN};font-size:12px">✓</span>`
+      : `<span style="color:${RED};font-size:12px">✗ no email</span>`;
+
+    return `<tr style="border-bottom:1px solid ${BORDER}">
+      <td style="padding:10px 12px;font-size:14px;font-weight:600;color:${DARK}">${r.coach.name}<br><span style="font-size:11px;color:${MUTED};font-weight:400">${r.days} days enrolled</span></td>
+      <td style="padding:10px 12px;font-size:13px;color:${DARK}">${phaseLabel}</td>
+      <td style="padding:10px 12px">${progressBar}</td>
+      <td style="padding:10px 12px">${feedbackCell}</td>
+      <td style="padding:10px 12px">${unlockCell}</td>
+      <td style="padding:10px 12px">${emailCell}</td>
+    </tr>`;
+  }).join("");
+
+  const totalCoaches = coaches.length;
+  const noEmail = coaches.filter(c => !c.email).length;
+  const surveysOutstanding = rows.filter(r => r.surveySuffix).length;
+  const feedbackOutstanding = rows.filter(r => r.awaitingFeedback > 0).length;
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Coach Program Overview</title>
+</head>
+<body style="margin:0;padding:0;background:#F3F4F6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#F3F4F6;padding:32px 16px;">
+    <tr><td align="center">
+      <table width="700" cellpadding="0" cellspacing="0" style="max-width:700px;width:100%;">
+
+        <!-- Header -->
+        <tr>
+          <td style="background:${BLUE};padding:28px 32px;border-radius:12px 12px 0 0;">
+            <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:rgba(255,255,255,0.7);letter-spacing:1px;text-transform:uppercase;">Admin Summary · Rebuild Health &amp; Fitness</p>
+            <h1 style="margin:0;font-size:24px;font-weight:800;color:white;">Coach Program Overview</h1>
+            <p style="margin:6px 0 0;font-size:14px;color:rgba(255,255,255,0.8);">Week of ${weekOf}</p>
+          </td>
+        </tr>
+
+        <!-- Stat row -->
+        <tr>
+          <td style="background:white;padding:20px 32px;border-bottom:1px solid ${BORDER};">
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="text-align:center;padding:12px;">
+                  <div style="font-size:28px;font-weight:800;color:${BLUE}">${totalCoaches}</div>
+                  <div style="font-size:12px;color:${MUTED};margin-top:2px">Active Coaches</div>
+                </td>
+                <td style="text-align:center;padding:12px;border-left:1px solid ${BORDER}">
+                  <div style="font-size:28px;font-weight:800;color:${surveysOutstanding > 0 ? AMBER : GREEN}">${surveysOutstanding}</div>
+                  <div style="font-size:12px;color:${MUTED};margin-top:2px">Surveys Outstanding</div>
+                </td>
+                <td style="text-align:center;padding:12px;border-left:1px solid ${BORDER}">
+                  <div style="font-size:28px;font-weight:800;color:${feedbackOutstanding > 0 ? AMBER : GREEN}">${feedbackOutstanding}</div>
+                  <div style="font-size:12px;color:${MUTED};margin-top:2px">Need Your Feedback</div>
+                </td>
+                <td style="text-align:center;padding:12px;border-left:1px solid ${BORDER}">
+                  <div style="font-size:28px;font-weight:800;color:${noEmail > 0 ? RED : GREEN}">${noEmail}</div>
+                  <div style="font-size:12px;color:${MUTED};margin-top:2px">Missing Email</div>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Coach table -->
+        <tr>
+          <td style="background:white;padding:0 32px 28px;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid ${BORDER};border-radius:8px;overflow:hidden;margin-top:24px;">
+              <thead>
+                <tr style="background:${LIGHT_BG}">
+                  <th style="text-align:left;padding:10px 12px;font-size:11px;color:${MUTED};text-transform:uppercase;letter-spacing:.5px">Coach</th>
+                  <th style="text-align:left;padding:10px 12px;font-size:11px;color:${MUTED};text-transform:uppercase;letter-spacing:.5px">Phase</th>
+                  <th style="text-align:left;padding:10px 12px;font-size:11px;color:${MUTED};text-transform:uppercase;letter-spacing:.5px">Progress</th>
+                  <th style="text-align:left;padding:10px 12px;font-size:11px;color:${MUTED};text-transform:uppercase;letter-spacing:.5px">Mentor Feedback</th>
+                  <th style="text-align:left;padding:10px 12px;font-size:11px;color:${MUTED};text-transform:uppercase;letter-spacing:.5px">Next Week</th>
+                  <th style="text-align:left;padding:10px 12px;font-size:11px;color:${MUTED};text-transform:uppercase;letter-spacing:.5px">Digest</th>
+                </tr>
+              </thead>
+              <tbody>${coachRows}</tbody>
+            </table>
+            <p style="margin:12px 0 0;font-size:12px;color:${MUTED}">⚠ = phase survey not yet completed &nbsp;·&nbsp; Sorted by progress (lowest first)</p>
+          </td>
+        </tr>
+
+        <!-- CTA -->
+        <tr>
+          <td style="background:white;padding:0 32px 28px;text-align:center;">
+            <a href="https://rebuild-coach-dashboard.vercel.app"
+               style="display:inline-block;padding:12px 24px;background:${BLUE};color:white;text-decoration:none;border-radius:8px;font-size:14px;font-weight:700;">
+              Open Dashboard →
+            </a>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="background:${LIGHT_BG};padding:16px 32px;border-radius:0 0 12px 12px;border:1px solid ${BORDER};border-top:none;text-align:center;">
+            <p style="margin:0;font-size:12px;color:${MUTED};">Rebuild Health &amp; Fitness · Admin weekly digest</p>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+}
+
 serve(async (req) => {
   // Allow manual trigger via POST for testing
   const isManual = req.method === "POST";
@@ -352,8 +537,26 @@ serve(async (req) => {
       }
     }
 
+    // ── Admin summary email ──
+    const adminEmail = "Fraserharrison13@hotmail.com";
+    const adminHtml = buildAdminSummaryHtml(coaches as CoachRow[], results);
+    const adminRes = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${RESEND_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: "Rebuild Coaching <onboarding@resend.dev>",
+        to: adminEmail,
+        subject: `Coach program overview — ${new Date().toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}`,
+        html: adminHtml,
+      }),
+    });
+    const adminStatus = adminRes.ok ? "sent" : `failed: ${await adminRes.text()}`;
+
     return new Response(
-      JSON.stringify({ sent: results.filter(r => r.status === "sent").length, results }),
+      JSON.stringify({ sent: results.filter(r => r.status === "sent").length, results, admin_summary: adminStatus }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
 
