@@ -135,6 +135,28 @@
   .doc-link-type { font-size:12px; color:var(--muted); }
   .notes-box { background:var(--offwhite); border-radius:8px; padding:14px; font-size:14px; line-height:1.6; white-space:pre-wrap; color:var(--dark); }
   .notes-empty { color:var(--muted); font-style:italic; }
+  .guide-box { background:var(--offwhite); border-radius:10px; padding:18px 20px; border-left:3px solid var(--gold,#c8a96e); }
+  .guide-intro { font-size:14px; font-weight:600; color:var(--dark); margin:0 0 14px; line-height:1.5; }
+  .guide-section { margin-bottom:16px; }
+  .guide-section:last-child { margin-bottom:0; }
+  .guide-section-heading { font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:var(--muted); margin-bottom:6px; }
+  .guide-body { font-size:14px; color:var(--dark); line-height:1.6; margin:0; }
+  .guide-list { margin:0; padding-left:18px; }
+  .guide-list li { font-size:14px; color:var(--dark); line-height:1.6; margin-bottom:5px; }
+  .guide-label { font-weight:700; color:var(--dark); }
+  .ref-library-card { background:var(--white); border-radius:var(--radius); border:1px solid var(--border); overflow:hidden; margin-top:20px; }
+  .ref-library-header { padding:14px 16px 10px; display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--border); }
+  .ref-library-icon { font-size:20px; }
+  .ref-library-title { font-size:14px; font-weight:700; color:var(--dark); flex:1; }
+  .ref-library-subtitle { font-size:12px; color:var(--muted); }
+  .ref-library-items { padding:8px 0; }
+  .ref-library-item { display:flex; align-items:center; gap:12px; padding:12px 16px; cursor:pointer; transition:background .15s; }
+  .ref-library-item:hover { background:var(--offwhite); }
+  .ref-item-icon { font-size:22px; flex-shrink:0; }
+  .ref-item-body { flex:1; min-width:0; }
+  .ref-item-name { font-size:14px; font-weight:600; color:var(--dark); margin-bottom:2px; }
+  .ref-item-desc { font-size:12px; color:var(--muted); line-height:1.5; }
+  .ref-item-arrow { color:var(--muted); font-size:16px; flex-shrink:0; }
 
   /* Reflection system */
   .reflection-box { background:var(--offwhite); border-radius:10px; padding:18px; }
@@ -493,6 +515,59 @@ const PHASES = [
           "What aspects of the business side of running a gym are new or unfamiliar to you?",
           "How do you see your role as a coach contributing to the business beyond just delivering classes?",
           "What questions do you have about how Rebuild operates day-to-day?"
+        ]},
+      { id:"2d", title:"Scaling — Preserving Workout Stimulus",
+        guide: {
+          intro: "Core idea: scale to the intended stimulus of the workout, not to the movements on the whiteboard.",
+          sections: [
+            { heading: "Step 1: Identify the stimulus first", body: "Before changing anything, answer: what is this workout meant to feel like, and what's the target time domain? (e.g., short and fast, long grinder, heavy and technical, steady aerobic). Every adjustment is judged against that answer." },
+            { heading: "Variables you can modify", items: [
+              { label: "Load", detail: "Reduce weight; swap implement (barbell → dumbbell → kettlebell → sandbag/med ball); use a lighter or more stable implement for skill or positional limits." },
+              { label: "Range of motion", detail: "Box, target or elevated surface; reduced depth or partial range where mobility or injury limits; raised hand position (elevated push-ups, incline pulls)." },
+              { label: "Movement complexity (substitution)", detail: "Regress to a simpler pattern in the same family (snatch → hang power snatch → DB snatch); swap for a movement with the same primary pattern and muscle demand; remove skill demand while keeping physiological demand." },
+              { label: "Assistance", detail: "Bands, boxes, spotting, reduced-load strict variations; eccentric-only or tempo-controlled versions when the concentric isn't available." },
+              { label: "Volume", detail: "Reduce reps per round; reduce rounds or total work; planned set breaks: split reps into smaller sets (e.g., 20 → 10-5-5, 21 → 7-7-7)." },
+              { label: "Partitioning (structure)", detail: "Split a block of work into more, smaller rounds: 5 rounds → 10 rounds at half the reps. Total reps stay identical; only the delivery changes. Rotating movements spreads fatigue, each round is a pacing checkpoint, and switching acts as active rest." },
+              { label: "Time and rest structure", detail: "Adjust time cap; add planned rest or change work:rest ratio; convert for-time to intervals when pacing is the issue." },
+              { label: "Modality (cardio)", detail: "Swap erg/run/bike/ski/skipping using conversion standards; change distance or calories to match the target time domain; impact modification (run → row or bike)." },
+              { label: "Pacing and intent", detail: "Prescribe a pace, round target or cap-on-each-round strategy; cue intensity rather than changing the work." },
+            ]},
+            { heading: "Partitioning vs planned set breaks", body: "Partitioning rounds changes workout structure and manages fatigue across movements. Planned set breaks change how reps within one movement are delivered and manage capacity within that movement. They can be combined, but they solve different problems." },
+            { heading: "Partitioning guidelines", items: [
+              { detail: "Keep movement order consistent across rounds so the workout still reads like the programmed one." },
+              { detail: "Check transitions: more rounds means more setup and station changes. If transitions are heavy, partition less aggressively." },
+              { detail: "Watch the stimulus shift: partitioning lowers local fatigue. If the programmed stimulus is a sustained slog, keep partitions larger." },
+              { detail: "Decide the partition before the clock starts and give the member the per-round target." },
+              { detail: "If scored for time, note the modification so members know how their result compares with the original structure." },
+            ]},
+            { heading: "10 principles for ad hoc adjustments", items: [
+              { detail: "Preserve the intent, not the movement. Match time domain, intensity and movement pattern before matching the exact exercise." },
+              { detail: "Change the fewest variables possible. Each adjustment drifts further from the workout." },
+              { detail: "Start with load or range of motion, then move to substitution." },
+              { detail: "Match the pattern, not just the muscle. Substitutions should hit the same movement family (push, pull, hinge, squat, carry)." },
+              { detail: "Use a sets-and-reps check. If they can't hold intended sets, the scale is too hard. If they finish well under time with no strain, it's too easy." },
+              { detail: "Safety and position quality come first. Pain is a stop-and-substitute signal, not a scale-and-continue one." },
+              { detail: "Scale the workout, not the person's ambition. Offer the most challenging appropriate option and let them earn progression." },
+              { detail: "Be consistent. Members should see similar scaling logic from every coach." },
+              { detail: "Communicate the why. Briefly explain what the workout is for and how the scale keeps that intact, so members learn to self-scale over time." },
+              { detail: "Debrief and learn. After the session, note what worked so options can be refined." },
+            ]},
+            { heading: "Quick decision flow", items: [
+              { detail: "What's the stimulus and time domain?" },
+              { detail: "Can the member do the movement safely with decent positions? If yes, adjust load or range." },
+              { detail: "If not, can they do a regression of the same pattern?" },
+              { detail: "If not, substitute a movement with the same pattern and demand." },
+              { detail: "If fatigue or capacity per set is the limiter, use planned set breaks or partition the rounds." },
+              { detail: "Adjust volume or time cap only to bring total time back into the target window." },
+              { detail: "Brief the member on target effort and pacing." },
+            ]},
+          ]
+        },
+        questions:[
+          "Describe a workout you've coached recently where a member needed scaling. What was the intended stimulus, and how did you preserve it?",
+          "Which of the scaling variables — load, range of motion, substitution, volume, partitioning — do you use most often? Which do you reach for least, and why?",
+          "What's the difference between scaling the workout and scaling the person's ambition? Where have you seen the line get blurred?",
+          "After reading the quick decision flow, what would you do differently next time you're making a scaling call on the fly?"
         ]},
     ]},
   { id:3, title:"Coaching, Communication & Leadership", weeks:"Weeks 5–6", unlockDay:28,
@@ -1035,7 +1110,36 @@ async function renderMyProgram(container, coachId) {
   }
 
   html += `</div>`;
+
+  // ── Reference Library ──
+  html += `<div class="ref-library-card">
+    <div class="ref-library-header">
+      <span class="ref-library-icon">&#128218;</span>
+      <span class="ref-library-title">Reference Library</span>
+      <span class="ref-library-subtitle">Guides available throughout the program</span>
+    </div>
+    <div class="ref-library-items">
+      <div class="ref-library-item" onclick="openScalingGuide('${coachId}')">
+        <div class="ref-item-icon">&#9878;</div>
+        <div class="ref-item-body">
+          <div class="ref-item-name">Scaling Framework: Preserving Workout Stimulus</div>
+          <div class="ref-item-desc">How to scale to the intended stimulus — variables, partitioning, decision flow, and 10 principles for ad hoc adjustments.</div>
+        </div>
+        <span class="ref-item-arrow">&#8594;</span>
+      </div>
+    </div>
+  </div>`;
+
   container.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// REFERENCE GUIDE MODAL (opens scaling guide standalone)
+// ═══════════════════════════════════════════════════════════════════════
+function openScalingGuide(coachId) {
+  const session = PHASES.flatMap(p => p.sessions).find(s => s.id === "2d");
+  if (!session) return;
+  openSession("2d", session.title, coachId);
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -1098,6 +1202,37 @@ async function openSession(sessionId, sessionTitle, coachId, isMentorView) {
       <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Complete your self-assessment below — rate each competency statement, then save to generate your personalised IDP summary.</p>
       <div id="modal-heatmap-container"></div>
     </div>`;
+  }
+
+  // ── Inline Guide Content ──
+  if (phaseSession?.guide) {
+    const g = phaseSession.guide;
+    html += `<div class="modal-section">
+      <div class="modal-section-title">Reference Guide</div>
+      <div class="guide-box">`;
+    if (g.intro) {
+      html += `<p class="guide-intro">${escHtml(g.intro)}</p>`;
+    }
+    (g.sections || []).forEach(sec => {
+      html += `<div class="guide-section">
+        <div class="guide-section-heading">${escHtml(sec.heading)}</div>`;
+      if (sec.body) {
+        html += `<p class="guide-body">${escHtml(sec.body)}</p>`;
+      }
+      if (sec.items) {
+        html += `<ul class="guide-list">`;
+        sec.items.forEach(item => {
+          if (item.label) {
+            html += `<li><span class="guide-label">${escHtml(item.label)}</span> ${escHtml(item.detail)}</li>`;
+          } else {
+            html += `<li>${escHtml(item.detail)}</li>`;
+          }
+        });
+        html += `</ul>`;
+      }
+      html += `</div>`;
+    });
+    html += `</div></div>`;
   }
 
   // ── Documents ──
@@ -2147,7 +2282,25 @@ async function openCoachView(coachId, coachName) {
 
   html += `</div>`; // close phase-grid
 
+  // ── Reference Library (mentor view) ──
   if (isMentor) {
+    html += `<div class="ref-library-card" style="margin-top:20px">
+      <div class="ref-library-header">
+        <span class="ref-library-icon">&#128218;</span>
+        <span class="ref-library-title">Reference Library</span>
+        <span class="ref-library-subtitle">Guides available throughout the program</span>
+      </div>
+      <div class="ref-library-items">
+        <div class="ref-library-item" onclick="openScalingGuide('${coachId}')">
+          <div class="ref-item-icon">&#9878;</div>
+          <div class="ref-item-body">
+            <div class="ref-item-name">Scaling Framework: Preserving Workout Stimulus</div>
+            <div class="ref-item-desc">How to scale to the intended stimulus — variables, partitioning, decision flow, and 10 principles for ad hoc adjustments.</div>
+          </div>
+          <span class="ref-item-arrow">&#8594;</span>
+        </div>
+      </div>
+    </div>`;
     html += `</div></div>`; // close coach-phases-col + coach-body-layout
   }
 
