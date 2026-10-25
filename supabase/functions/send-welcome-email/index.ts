@@ -47,7 +47,8 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Rebuild Coaching <onboarding@resend.dev>",
+        from: "Rebuild Coaching <coaching@contact.rebuildcoaching.education>",
+        reply_to: "Fraserharrison13@hotmail.com",
         to: coach.email,
         subject: "Welcome to the Rebuild Coaching Program 🎉",
         html,
@@ -85,7 +86,7 @@ function buildWelcomeEmail(firstName: string): string {
   <tr>
     <td style="background:#1a1a1a;padding:32px 40px;text-align:center;border-radius:8px 8px 0 0;">
       <h1 style="margin:0;color:#ffffff;font-family:Georgia,serif;font-size:28px;letter-spacing:2px;text-transform:uppercase;">REBUILD</h1>
-      <p style="margin:6px 0 0;color:#c8a96e;font-family:Arial,sans-serif;font-size:13px;letter-spacing:3px;text-transform:uppercase;">Coaching Program</p>
+      <p style="margin:6px 0 0;color:#3478EB;font-family:Arial,sans-serif;font-size:13px;letter-spacing:3px;text-transform:uppercase;">Coaching Program</p>
     </td>
   </tr>
 
@@ -108,13 +109,13 @@ function buildWelcomeEmail(firstName: string): string {
       <table width="100%" cellpadding="0" cellspacing="0">
         <tr>
           <td style="padding:24px 0 16px;">
-            <h3 style="margin:0 0 20px;color:#1a1a1a;font-family:Georgia,serif;font-size:17px;border-bottom:2px solid #c8a96e;padding-bottom:10px;">The 6-Phase Program</h3>
+            <h3 style="margin:0 0 20px;color:#1a1a1a;font-family:Georgia,serif;font-size:17px;border-bottom:2px solid #3478EB;padding-bottom:10px;">The 6-Phase Program</h3>
 
             <!-- Phase 1 -->
             <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
               <tr>
                 <td width="48" valign="top">
-                  <div style="width:36px;height:36px;background:#1a1a1a;border-radius:50%;text-align:center;line-height:36px;color:#c8a96e;font-family:Arial,sans-serif;font-weight:bold;font-size:14px;">1</div>
+                  <div style="width:36px;height:36px;background:#1a1a1a;border-radius:50%;text-align:center;line-height:36px;color:#3478EB;font-family:Arial,sans-serif;font-weight:bold;font-size:14px;">1</div>
                 </td>
                 <td valign="top" style="padding-left:12px;">
                   <p style="margin:0 0 2px;color:#1a1a1a;font-family:Arial,sans-serif;font-weight:bold;font-size:14px;">Foundations <span style="color:#888;font-weight:normal;">— Week 1–2</span></p>
@@ -127,7 +128,7 @@ function buildWelcomeEmail(firstName: string): string {
             <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
               <tr>
                 <td width="48" valign="top">
-                  <div style="width:36px;height:36px;background:#1a1a1a;border-radius:50%;text-align:center;line-height:36px;color:#c8a96e;font-family:Arial,sans-serif;font-weight:bold;font-size:14px;">2</div>
+                  <div style="width:36px;height:36px;background:#1a1a1a;border-radius:50%;text-align:center;line-height:36px;color:#3478EB;font-family:Arial,sans-serif;font-weight:bold;font-size:14px;">2</div>
                 </td>
                 <td valign="top" style="padding-left:12px;">
                   <p style="margin:0 0 2px;color:#1a1a1a;font-family:Arial,sans-serif;font-weight:bold;font-size:14px;">Communication & Connection <span style="color:#888;font-weight:normal;">— Week 3–4</span></p>
@@ -140,7 +141,7 @@ function buildWelcomeEmail(firstName: string): string {
             <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
               <tr>
                 <td width="48" valign="top">
-                  <div style="width:36px;height:36px;background:#1a1a1a;border-radius:50%;text-align:center;line-height:36px;color:#c8a96e;font-family:Arial,sans-serif;font-weight:bold;font-size:14px;">3</div>
+                  <div style="width:36px;height:36px;background:#1a1a1a;border-radius:50%;text-align:center;line-height:36px;color:#3478EB;font-family:Arial,sans-serif;font-weight:bold;font-size:14px;">3</div>
                 </td>
                 <td valign="top" style="padding-left:12px;">
                   <p style="margin:0 0 2px;color:#1a1a1a;font-family:Arial,sans-serif;font-weight:bold;font-size:14px;">Programming & Delivery <span style="color:#888;font-weight:normal;">— Week 5–6</span></p>
@@ -153,7 +154,7 @@ function buildWelcomeEmail(firstName: string): string {
             <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
               <tr>
                 <td width="48" valign="top">
-                  <div style="width:36px;height:36px;background:#1a1a1a;border-radius:50%;text-align:center;line-height:36px;color:#c8a96e;font-family:Arial,sans-serif;font-weight:bold;font-size:14px;">4</div>
+                  <div style="width:36px;height:36px;background:#1a1a1a;border-radius:50%;text-align:center;line-height:36px;color:#3478EB;font-family:Arial,sans-serif;font-weight:bold;font-size:14px;">4</div>
                 </td>
                 <td valign="top" style="padding-left:12px;">
                   <p style="margin:0 0 2px;color:#1a1a1a;font-family:Arial,sans-serif;font-weight:bold;font-size:14px;">Member Experience <span style="color:#888;font-weight:normal;">— Week 7–8</span></p>
@@ -166,7 +167,7 @@ function buildWelcomeEmail(firstName: string): string {
             <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
               <tr>
                 <td width="48" valign="top">
-                  <div style="width:36px;height:36px;background:#1a1a1a;border-radius:50%;text-align:center;line-height:36px;color:#c8a96e;font-family:Arial,sans-serif;font-weight:bold;font-size:14px;">5</div>
+                  <div style="width:36px;height:36px;background:#1a1a1a;border-radius:50%;text-align:center;line-height:36px;color:#3478EB;font-family:Arial,sans-serif;font-weight:bold;font-size:14px;">5</div>
                 </td>
                 <td valign="top" style="padding-left:12px;">
                   <p style="margin:0 0 2px;color:#1a1a1a;font-family:Arial,sans-serif;font-weight:bold;font-size:14px;">Leadership & Growth <span style="color:#888;font-weight:normal;">— Week 9–10</span></p>
@@ -179,7 +180,7 @@ function buildWelcomeEmail(firstName: string): string {
             <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:8px;">
               <tr>
                 <td width="48" valign="top">
-                  <div style="width:36px;height:36px;background:#c8a96e;border-radius:50%;text-align:center;line-height:36px;color:#1a1a1a;font-family:Arial,sans-serif;font-weight:bold;font-size:14px;">6</div>
+                  <div style="width:36px;height:36px;background:#3478EB;border-radius:50%;text-align:center;line-height:36px;color:#1a1a1a;font-family:Arial,sans-serif;font-weight:bold;font-size:14px;">6</div>
                 </td>
                 <td valign="top" style="padding-left:12px;">
                   <p style="margin:0 0 2px;color:#1a1a1a;font-family:Arial,sans-serif;font-weight:bold;font-size:14px;">Mastery & Reflection <span style="color:#888;font-weight:normal;">— Week 11–12</span></p>
@@ -204,7 +205,7 @@ function buildWelcomeEmail(firstName: string): string {
             <table width="100%" cellpadding="0" cellspacing="0">
               <tr>
                 <td width="28" valign="top" style="padding-top:2px;">
-                  <div style="width:20px;height:20px;background:#c8a96e;border-radius:50%;text-align:center;line-height:20px;color:#1a1a1a;font-family:Arial,sans-serif;font-size:11px;font-weight:bold;">✓</div>
+                  <div style="width:20px;height:20px;background:#3478EB;border-radius:50%;text-align:center;line-height:20px;color:#1a1a1a;font-family:Arial,sans-serif;font-size:11px;font-weight:bold;">✓</div>
                 </td>
                 <td style="padding-left:10px;color:#444;font-family:Arial,sans-serif;font-size:14px;line-height:1.6;">
                   <strong>New phases unlock every two weeks</strong> based on your start date — no rushing, no falling behind.
@@ -218,7 +219,7 @@ function buildWelcomeEmail(firstName: string): string {
             <table width="100%" cellpadding="0" cellspacing="0">
               <tr>
                 <td width="28" valign="top" style="padding-top:2px;">
-                  <div style="width:20px;height:20px;background:#c8a96e;border-radius:50%;text-align:center;line-height:20px;color:#1a1a1a;font-family:Arial,sans-serif;font-size:11px;font-weight:bold;">✓</div>
+                  <div style="width:20px;height:20px;background:#3478EB;border-radius:50%;text-align:center;line-height:20px;color:#1a1a1a;font-family:Arial,sans-serif;font-size:11px;font-weight:bold;">✓</div>
                 </td>
                 <td style="padding-left:10px;color:#444;font-family:Arial,sans-serif;font-size:14px;line-height:1.6;">
                   <strong>Each phase contains sessions</strong> with videos, tasks, and short reflections to complete at your own pace.
@@ -232,7 +233,7 @@ function buildWelcomeEmail(firstName: string): string {
             <table width="100%" cellpadding="0" cellspacing="0">
               <tr>
                 <td width="28" valign="top" style="padding-top:2px;">
-                  <div style="width:20px;height:20px;background:#c8a96e;border-radius:50%;text-align:center;line-height:20px;color:#1a1a1a;font-family:Arial,sans-serif;font-size:11px;font-weight:bold;">✓</div>
+                  <div style="width:20px;height:20px;background:#3478EB;border-radius:50%;text-align:center;line-height:20px;color:#1a1a1a;font-family:Arial,sans-serif;font-size:11px;font-weight:bold;">✓</div>
                 </td>
                 <td style="padding-left:10px;color:#444;font-family:Arial,sans-serif;font-size:14px;line-height:1.6;">
                   <strong>Your mentor will review your submissions</strong> and leave personalised feedback throughout the program.
@@ -246,7 +247,7 @@ function buildWelcomeEmail(firstName: string): string {
             <table width="100%" cellpadding="0" cellspacing="0">
               <tr>
                 <td width="28" valign="top" style="padding-top:2px;">
-                  <div style="width:20px;height:20px;background:#c8a96e;border-radius:50%;text-align:center;line-height:20px;color:#1a1a1a;font-family:Arial,sans-serif;font-size:11px;font-weight:bold;">✓</div>
+                  <div style="width:20px;height:20px;background:#3478EB;border-radius:50%;text-align:center;line-height:20px;color:#1a1a1a;font-family:Arial,sans-serif;font-size:11px;font-weight:bold;">✓</div>
                 </td>
                 <td style="padding-left:10px;color:#444;font-family:Arial,sans-serif;font-size:14px;line-height:1.6;">
                   <strong>You'll receive a weekly digest</strong> every Saturday morning summarising your progress and any upcoming unlocks.
@@ -262,8 +263,8 @@ function buildWelcomeEmail(firstName: string): string {
   <!-- CTA -->
   <tr>
     <td style="background:#1a1a1a;padding:32px 40px;text-align:center;border-radius:0 0 8px 8px;">
-      <p style="margin:0 0 20px;color:#c8a96e;font-family:Arial,sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;">Ready to get started?</p>
-      <a href="https://rebuild-coach-dashboard.vercel.app" style="display:inline-block;background:#c8a96e;color:#1a1a1a;font-family:Arial,sans-serif;font-weight:bold;font-size:15px;text-decoration:none;padding:14px 32px;border-radius:4px;letter-spacing:1px;">Open Your Dashboard →</a>
+      <p style="margin:0 0 20px;color:#3478EB;font-family:Arial,sans-serif;font-size:13px;letter-spacing:2px;text-transform:uppercase;">Ready to get started?</p>
+      <a href="https://rebuildcoaching.education" style="display:inline-block;background:#3478EB;color:#1a1a1a;font-family:Arial,sans-serif;font-weight:bold;font-size:15px;text-decoration:none;padding:14px 32px;border-radius:4px;letter-spacing:1px;">Open Your Dashboard →</a>
       <p style="margin:24px 0 0;color:#777;font-family:Arial,sans-serif;font-size:12px;line-height:1.6;">
         Log in with your access code. If you don't have one yet, Fraser will send it to you shortly.<br>
         Questions? Reply to this email and we'll get back to you.

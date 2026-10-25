@@ -58,7 +58,8 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Rebuild Coach Dashboard <onboarding@resend.dev>",
+        from: "Rebuild Coaching <coaching@contact.rebuildcoaching.education>",
+        reply_to: "Fraserharrison13@hotmail.com",
         to: [NOTIFY_EMAIL],
         subject: `Reflection submitted: ${coachName} — Session ${sessionId.toUpperCase()}: ${sessionTitle}`,
         html,

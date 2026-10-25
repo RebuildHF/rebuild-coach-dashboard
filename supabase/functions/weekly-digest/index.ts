@@ -91,12 +91,13 @@ function buildEmailHtml(coach: CoachRow): string {
     }
   }
 
-  // ── Mentor responses received ──
-  const mentorResponses: string[] = [];
+  // ── Mentor responses received (with content) ──
+  const mentorResponses: Array<{ sid: string; text: string }> = [];
   for (const p of PHASES) {
     for (const sid of p.sessions) {
-      if (data[`${sid}_mentor_response`]) {
-        mentorResponses.push(sid);
+      const response = data[`${sid}_mentor_response`];
+      if (response) {
+        mentorResponses.push({ sid, text: String(response) });
       }
     }
   }
@@ -155,12 +156,20 @@ function buildEmailHtml(coach: CoachRow): string {
     : `<tr><td style="padding:8px 12px;font-size:14px;color:${MUTED};font-style:italic;">No sessions completed yet — your journey is just beginning!</td></tr>`;
 
   const mentorRows = mentorResponses.length > 0
-    ? mentorResponses.map(sid => `
+    ? mentorResponses.map(({ sid, text }) => {
+        // Split feedback into bullet points on newlines, filter blanks
+        const bullets = text.split(/\n+/).map(l => l.trim()).filter(Boolean);
+        const bulletHtml = bullets.length > 1
+          ? `<ul style="margin:6px 0 0 0;padding-left:18px;">${bullets.map(b => `<li style="font-size:13px;color:${MUTED};line-height:1.6;margin-bottom:2px;">${b}</li>`).join("")}</ul>`
+          : `<p style="margin:4px 0 0;font-size:13px;color:${MUTED};line-height:1.6;">${text}</p>`;
+        return `
         <tr>
-          <td style="padding:8px 12px;border-bottom:1px solid ${BORDER};font-size:14px;color:${DARK};">
-            💬 ${SESSION_LABELS[sid] || sid}
+          <td style="padding:12px 16px;border-bottom:1px solid ${BORDER};">
+            <p style="margin:0;font-size:14px;font-weight:600;color:${DARK};">💬 ${SESSION_LABELS[sid] || sid}</p>
+            ${bulletHtml}
           </td>
-        </tr>`).join("")
+        </tr>`;
+      }).join("")
     : `<tr><td style="padding:8px 12px;font-size:14px;color:${MUTED};font-style:italic;">No mentor feedback yet — check back soon.</td></tr>`;
 
   const unlockRows = unlockingNextWeek.length > 0
@@ -185,7 +194,7 @@ function buildEmailHtml(coach: CoachRow): string {
               You haven't completed the ${surveyNudge} check-in survey yet.
               It only takes 2 minutes and helps your mentor support you better.
             </p>
-            <a href="https://rebuild-coach-dashboard.vercel.app"
+            <a href="https://rebuildcoaching.education"
                style="display:inline-block;margin-top:12px;padding:8px 16px;background:${AMBER};color:white;text-decoration:none;border-radius:6px;font-size:13px;font-weight:600;">
               Complete Survey →
             </a>
@@ -261,7 +270,7 @@ function buildEmailHtml(coach: CoachRow): string {
 
               <!-- CTA -->
               <div style="margin-top:28px;text-align:center;">
-                <a href="https://rebuild-coach-dashboard.vercel.app"
+                <a href="https://rebuildcoaching.education"
                    style="display:inline-block;padding:13px 28px;background:${BLUE};color:white;text-decoration:none;border-radius:8px;font-size:15px;font-weight:700;">
                   Open My Dashboard →
                 </a>
@@ -453,7 +462,7 @@ function buildAdminSummaryHtml(
         <!-- CTA -->
         <tr>
           <td style="background:white;padding:0 32px 28px;text-align:center;">
-            <a href="https://rebuild-coach-dashboard.vercel.app"
+            <a href="https://rebuildcoaching.education"
                style="display:inline-block;padding:12px 24px;background:${BLUE};color:white;text-decoration:none;border-radius:8px;font-size:14px;font-weight:700;">
               Open Dashboard →
             </a>
@@ -522,7 +531,8 @@ serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: "Rebuild Coaching <onboarding@resend.dev>",
+          from: "Rebuild Coaching <coaching@contact.rebuildcoaching.education>",
+          reply_to: "Fraserharrison13@hotmail.com",
           to: coach.email,
           subject: `Your weekly coaching digest — ${new Date().toLocaleDateString("en-AU", { day: "numeric", month: "long" })}`,
           html,
@@ -547,7 +557,8 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Rebuild Coaching <onboarding@resend.dev>",
+        from: "Rebuild Coaching <coaching@contact.rebuildcoaching.education>",
+        reply_to: "Fraserharrison13@hotmail.com",
         to: adminEmail,
         subject: `Coach program overview — ${new Date().toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}`,
         html: adminHtml,
