@@ -576,21 +576,21 @@ const PHASES = [
     ]},
   { id:6, title:"Evaluation & Graduation", weeks:"Weeks 11–12", unlockDay:70,
     sessions:[
-      { id:"6a", title:"Heatmap Re-Assessment", video:"",
+      { id:"6a", title:"Final Assessment & Reflection", video:"https://youtu.be/KNAO9SOC41o",
         questions:[
           "Comparing your Week 2 and Week 11 heatmaps, where has your growth been most significant?",
           "Are there areas where your self-rating has stayed the same or dropped? What does that tell you?",
           "Were there any competencies that developed differently from what you expected at the start?",
           "What would it take to reach the next level in your lowest-rated areas over the next 6–12 months?"
         ]},
-      { id:"6b", title:"Portfolio Review", video:"",
+      { id:"6b", title:"Action Plan for the Future", video:"https://youtu.be/1rJ5QFFoz2c",
         questions:[
           "Looking back across the 12 weeks, what are you most proud of in your development as a coach?",
           "What was the most challenging part of this program, and how did you work through it?",
           "What feedback from your mentor has had the biggest impact on your coaching?",
           "What would you tell someone starting this program to help them get the most out of it?"
         ]},
-      { id:"6c", title:"Graduation & Next Steps", video:"",
+      { id:"6c", title:"Business Review & Personal Brand", video:"https://youtu.be/hiqo1hp58k8",
         questions:[
           "How has your identity as a coach shifted over the past 12 weeks?",
           "What are your top three coaching goals for the next 12 months?",
@@ -2330,7 +2330,10 @@ async function renderManageUsers(container) {
   </div>
 
   <div class="card">
-    <div class="card-title" style="margin-bottom:16px">All Users (${allUsers.length})</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div class="card-title" style="margin:0">All Users (${allUsers.length})</div>
+      <a href="${SUPABASE_URL}/functions/v1/export-users" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration:none">⬇ Export CSV</a>
+    </div>
     <table style="width:100%;border-collapse:collapse;font-size:14px">
       <thead>
         <tr style="border-bottom:2px solid var(--border)">
