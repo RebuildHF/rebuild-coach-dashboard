@@ -216,6 +216,23 @@
   .survey-footer { display:flex; gap:10px; align-items:center; }
   .survey-complete-banner { background:#ECFDF5; border:1px solid #A7F3D0; border-radius:10px; padding:16px 20px; display:flex; align-items:center; gap:12px; margin-bottom:20px; }
   .survey-complete-icon { font-size:22px; }
+  /* Admin survey panel */
+  .admin-survey-panel { margin-top:12px; border:1.5px solid var(--border); border-radius:10px; overflow:hidden; }
+  .admin-survey-header { display:flex; align-items:center; justify-content:space-between; padding:9px 14px; background:var(--blue-light); cursor:pointer; user-select:none; }
+  .admin-survey-header-label { font-size:12px; font-weight:700; color:var(--blue); display:flex; align-items:center; gap:6px; }
+  .admin-survey-header-status { font-size:11px; font-weight:600; }
+  .admin-survey-header-status.done { color:#059669; }
+  .admin-survey-header-status.pending { color:var(--muted); }
+  .admin-survey-body { padding:14px; display:none; }
+  .admin-survey-body.open { display:block; }
+  .admin-survey-section-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.8px; color:var(--muted); margin:10px 0 6px; }
+  .admin-survey-row { display:flex; align-items:flex-start; gap:10px; margin-bottom:8px; }
+  .admin-survey-score { min-width:28px; height:28px; border-radius:6px; background:var(--blue); color:#fff; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .admin-survey-score.na { background:var(--border); color:var(--muted); }
+  .admin-survey-q { font-size:12px; color:var(--dark); line-height:1.4; padding-top:5px; }
+  .admin-survey-open { background:var(--bg); border-radius:7px; padding:9px 12px; font-size:12px; color:var(--dark); line-height:1.5; margin-bottom:6px; }
+  .admin-survey-open-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:var(--muted); margin-bottom:3px; }
+  .admin-survey-not-submitted { padding:10px 0; font-size:12px; color:var(--muted); text-align:center; }
   .survey-complete-text { font-size:14px; color:#059669; font-weight:600; }
   .survey-complete-sub { font-size:12px; color:#6B7280; margin-top:2px; }
 
@@ -1030,9 +1047,14 @@ async function renderMyProgram(container, coachId) {
     }
     if (isUnlocked) {
       const surveyDone = sessionData[`phase${phase.id}_survey_submitted`] === true;
-      html += `<button class="phase-survey-btn ${surveyDone ? 'completed' : ''}" onclick="openPhaseSurvey(${phase.id},'${coachId}',event)">
-        ${surveyDone ? '&#10003; Phase Survey Completed' : '&#128203; Complete Phase Survey'}
-      </button>`;
+      if (isMentor) {
+        // Admin/mentor: show read-only survey responses or not-submitted state
+        html += renderAdminSurveyPanel(phase.id, sessionData);
+      } else {
+        html += `<button class="phase-survey-btn ${surveyDone ? 'completed' : ''}" onclick="openPhaseSurvey(${phase.id},'${coachId}',event)">
+          ${surveyDone ? '&#10003; Phase Survey Completed' : '&#128203; Complete Phase Survey'}
+        </button>`;
+      }
     }
     html += `</div></div>`;
   }
@@ -1374,6 +1396,49 @@ function closeModal() {
 // ═══════════════════════════════════════════════════════════════════════
 // PHASE SURVEY (Kirkpatrick Level 1 & 2)
 // ═══════════════════════════════════════════════════════════════════════
+
+function renderAdminSurveyPanel(phaseId, sessionData) {
+  const submitted = sessionData[`phase${phaseId}_survey_submitted`] === true;
+  const data = sessionData[`phase${phaseId}_survey`] || null;
+  const uid = `asp-${phaseId}`;
+  let html = `<div class="admin-survey-panel">
+    <div class="admin-survey-header" onclick="document.getElementById('${uid}').classList.toggle('open')">
+      <div class="admin-survey-header-label">&#128203; Phase Survey</div>
+      <div class="admin-survey-header-status ${submitted?'done':'pending'}">${submitted ? '&#10003; Submitted' : 'Not submitted'}</div>
+    </div>
+    <div class="admin-survey-body" id="${uid}">`;
+
+  if (!submitted || !data) {
+    html += `<div class="admin-survey-not-submitted">Coach has not submitted this survey yet.</div>`;
+  } else {
+    const submittedAt = data.submitted_at ? new Date(data.submitted_at).toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"}) : null;
+    if (submittedAt) html += `<div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Submitted ${submittedAt}</div>`;
+
+    html += `<div class="admin-survey-section-label">Reaction</div>`;
+    for (const q of SURVEY_L1_QUESTIONS) {
+      const val = data[q.id];
+      html += `<div class="admin-survey-row">
+        <div class="admin-survey-score ${val ? '' : 'na'}">${val || '—'}</div>
+        <div class="admin-survey-q">${q.text}</div>
+      </div>`;
+    }
+    if (data.l1_best) html += `<div class="admin-survey-open-label">Most useful part</div><div class="admin-survey-open">${data.l1_best}</div>`;
+    if (data.l1_improve) html += `<div class="admin-survey-open-label">Could be improved</div><div class="admin-survey-open">${data.l1_improve}</div>`;
+
+    html += `<div class="admin-survey-section-label" style="margin-top:14px;">Learning</div>`;
+    for (const q of SURVEY_L2_QUESTIONS) {
+      const val = data[q.id];
+      html += `<div class="admin-survey-row">
+        <div class="admin-survey-score ${val ? '' : 'na'}">${val || '—'}</div>
+        <div class="admin-survey-q">${q.text}</div>
+      </div>`;
+    }
+    if (data.l2_focus) html += `<div class="admin-survey-open-label">Focus for next phase</div><div class="admin-survey-open">${data.l2_focus}</div>`;
+  }
+
+  html += `</div></div>`;
+  return html;
+}
 
 const SURVEY_L1_QUESTIONS = [
   { id:"l1_relevant", text:"The content covered in this phase was relevant to my coaching role." },
